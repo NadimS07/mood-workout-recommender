@@ -20,7 +20,8 @@
       linear-gradient(180deg,var(--bg-1), var(--bg-2));
       color:#eaf8ff; display:flex; align-items:center; justify-content:center; padding:48px; }
 
-    .wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+    /* wrap now has top padding so fixed banner doesn't overlap content */
+    .wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:18px; padding-top:72px;}
     header{display:block;margin-bottom:6px}
     h1{margin:0;font-size:20px}
     p.lead{margin:8px 0 0 0;color:var(--muted);font-size:13px}
@@ -61,12 +62,25 @@
     .result .sub{display:block;margin-top:10px;color:var(--muted);font-size:13px}
     .meta-list{margin-top:10px;color:var(--muted);font-size:13px}
 
-    /* Safety banner */
-    .safety-banner{
-      display:none; margin-bottom:10px; padding:12px; border-radius:10px; background:linear-gradient(90deg,#2f2330,#1b2a30);
-      border:1px solid rgba(255,255,255,0.03); color:#ffece8; font-weight:700;
+    /* Fixed safety banner so it stays visible */
+    .safety-banner {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 40px);
+      max-width: 880px;
+      z-index: 9999;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: linear-gradient(90deg,#2f2330,#1b2a30);
+      border: 1px solid rgba(255,255,255,0.05);
+      color: #ffece8;
+      font-weight: 700;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      display: none;
     }
-    .safety-banner.show{display:block}
+    .safety-banner.show { display:block; }
 
     .consent { display:none; margin-top:10px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.02); }
     .consent.show{display:block}
@@ -83,23 +97,24 @@
 
     footer{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;padding-top:6px}
 
-    @media (max-width:920px){ .wrap{padding:0 12px} }
-    @media (max-width:640px){ body{padding:24px} .glow{display:none} }
+    @media (max-width:920px){ .wrap{padding:0 12px 12px 12px} }
+    @media (max-width:640px){ body{padding:24px} .glow{display:none} .safety-banner { width: calc(100% - 32px); top: 12px; } }
   </style>
 </head>
 <body>
   <main class="wrap" role="main" aria-labelledby="appTitle">
-    <!-- Hidden local asset reference (transformable by your environment) -->
-    <img id="asset-ref" src="/mnt/data/cd4549cb-8aae-422b-99de-0f1c9f32aa24.png" alt="" style="display:none" />
+    <!-- Hidden local asset reference (transformable) -->
+    <img id="asset-ref" src="/mnt/data/26fd4b71-2251-4246-9100-b25c3db7e95d.png" alt="" style="display:none" />
+
+    <!-- Fixed safety banner (starts hidden; will show when high-risk) -->
+    <div id="safetyBanner" class="safety-banner" role="alert" aria-live="assertive">
+      ⚠️ <strong>Safety first:</strong> You reported extremely low sleep, very high stress, and very low mood. The immediate priority is safety and rest — do not start intense exercise right now. If you are in danger or thinking about harming yourself, contact emergency services immediately.
+    </div>
 
     <header>
       <h1 id="appTitle">Mood → Workout Recommender</h1>
       <p class="lead">Psychology-informed quick recommendations using simple, explainable rules. Static demo — no backend.</p>
     </header>
-
-    <div id="safetyBanner" class="safety-banner" role="alert" aria-live="assertive">
-      ⚠️ <strong>Safety first:</strong> You reported extremely low sleep, very high stress, and very low mood. The immediate priority is safety and rest — do not start intense exercise right now. If you are in danger or thinking about harming yourself, contact emergency services immediately.
-    </div>
 
     <section class="card" aria-labelledby="inputsHeading">
       <h2 id="inputsHeading" style="position:absolute;left:-9999px;">Inputs</h2>
@@ -173,7 +188,7 @@
   </main>
 
   <script>
-    // ---------- DATA & SUGGESTIONS (as before) ----------
+    // ---------- DATA & SUGGESTIONS ----------
     const SUGGESTIONS = {
       immediate_recovery: {
         title: "🛌 Immediate Recovery & Safety Plan — Rest First",
@@ -286,47 +301,17 @@
     [mood, stress, sleep].forEach(el => el.addEventListener('input', updateLabels));
     updateLabels();
 
-    // ---------- LOCAL HISTORY STORAGE ----------
-    const STORAGE_KEY = 'mwr_history_v1'; // Mood Workout Recommender history
-
+    // ---------- LOCAL HISTORY ----------
+    const STORAGE_KEY = 'mwr_history_v1';
     function loadHistory() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        return JSON.parse(raw);
-      } catch (e) {
-        console.error('Failed reading history', e);
-        return [];
-      }
+      try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return []; return JSON.parse(raw); } catch(e){ console.error(e); return []; }
     }
+    function saveHistory(arr) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-5))); } catch(e){ console.error(e); } }
+    function pushRecord(record) { const arr = loadHistory(); arr.push(record); const slice = arr.slice(-5); saveHistory(slice); return slice; }
+    function clearHistoryFn() { localStorage.removeItem(STORAGE_KEY); renderChart([]); }
+    clearHistory.addEventListener('click', clearHistoryFn);
 
-    function saveHistory(arr) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-5)));
-      } catch (e) {
-        console.error('Failed saving history', e);
-      }
-    }
-
-    function pushRecord(record) {
-      const arr = loadHistory();
-      arr.push(record);
-      // keep last 5
-      const slice = arr.slice(-5);
-      saveHistory(slice);
-      return slice;
-    }
-
-    function clearHistoryFn() {
-      localStorage.removeItem(STORAGE_KEY);
-      renderChart([]);
-    }
-
-    clearHistory.addEventListener('click', () => {
-      clearHistoryFn();
-    });
-
-    // ---------- DECISION LOGIC (keeps safety-first) ----------
+    // ---------- DECISION ----------
     function decideRecommendation(m, s, sl) {
       if (sl <= 1 && s >= 9 && m <= 2) return { primary: 'immediate_recovery', secondary: null, highRisk: true };
       if (sl <= 2) return { primary: 'immediate_recovery', secondary: (s >= 8 ? 'grounding_stress' : null), highRisk: false };
@@ -338,7 +323,7 @@
       return { primary: 'balanced', secondary: null, highRisk: false };
     }
 
-    // ---------- RENDER & CHART ----------
+    // ---------- RENDER ----------
     function renderRecommendation(decision, reported) {
       const primary = SUGGESTIONS[decision.primary];
       const secondary = decision.secondary ? SUGGESTIONS[decision.secondary] : null;
@@ -367,7 +352,6 @@
           `;
           result.classList.add('show');
         }, 80);
-
         consentBox.classList.add('show');
         consentCheck.checked = false;
         consentProceed.disabled = true;
@@ -413,7 +397,7 @@
       }, 80);
     }
 
-    // Render chart: simple SVG with 3 lines (mood, stress, sleep). History is array of objects {m,s,sl,t}
+    // ---------- CHART ----------
     function renderChart(history) {
       chartContainer.innerHTML = '';
       if (!history || !history.length) {
@@ -421,33 +405,24 @@
         return;
       }
 
-      // prepare svg
       const w = chartContainer.clientWidth || 760;
       const h = 140;
       const padding = { l: 36, r: 12, t: 8, b: 22 };
       const innerW = Math.max(100, w - padding.l - padding.r);
       const innerH = Math.max(60, h - padding.t - padding.b);
-
-      // x positions equally spaced
       const n = history.length;
       const xStep = innerW / Math.max(1, n - 1);
       function x(i) { return padding.l + i * xStep; }
-      // y scale 0-10 maps to bottom-top
       function y(val) { return padding.t + innerH - (val / 10) * innerH; }
 
-      // build path for each metric
       function buildPath(key) {
         return history.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(2)} ${y(d[key]).toFixed(2)}`).join(' ');
       }
-
       const moodPath = buildPath('m');
       const stressPath = buildPath('s');
       const sleepPath = buildPath('sl');
 
-      // ticks on y-axis: 0, 5, 10
       const yTicks = [10,5,0];
-
-      // labels for x: time short (HH:MM) or relative
       const labels = history.map(d => {
         const dt = new Date(d.t);
         const hh = dt.getHours().toString().padStart(2,'0');
@@ -455,61 +430,41 @@
         return `${hh}:${mm}`;
       });
 
-      // svg
       const svg = `
         <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="History chart">
-          <defs>
-            <linearGradient id="gMood" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" stop-opacity="0.9"/>
-              <stop offset="1" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" stop-opacity="0.2"/>
-            </linearGradient>
-          </defs>
-
-          <!-- y grid and labels -->
           ${yTicks.map(t => `<line x1="${padding.l}" x2="${w - padding.r}" y1="${y(t)}" y2="${y(t)}" stroke="rgba(255,255,255,0.02)" stroke-width="1"/>`).join('')}
           ${yTicks.map(t => `<text x="${8}" y="${y(t)+4}" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}" font-size="11">${t}</text>`).join('')}
 
-          <!-- stress path (dashed) -->
           <path d="${stressPath}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--stress-color')}" stroke-width="2" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 4" />
-
-          <!-- sleep path (dotted) -->
           <path d="${sleepPath}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--sleep-color')}" stroke-width="2" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4" />
-
-          <!-- mood path (solid) -->
           <path d="${moodPath}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" />
 
-          <!-- points -->
           ${history.map((d,i) => `<circle cx="${x(i)}" cy="${y(d.m)}" r="3.6" fill="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" />`).join('')}
           ${history.map((d,i) => `<rect x="${x(i)-3}" y="${y(d.s)-3}" width="6" height="6" rx="1.6" fill="${getComputedStyle(document.documentElement).getPropertyValue('--stress-color')}" />`).join('')}
           ${history.map((d,i) => `<circle cx="${x(i)}" cy="${y(d.sl)}" r="2.6" fill="${getComputedStyle(document.documentElement).getPropertyValue('--sleep-color')}" />`).join('')}
 
-          <!-- x labels -->
           ${labels.map((lab,i) => `<text x="${x(i)}" y="${h - 4}" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}" font-size="11" text-anchor="middle">${lab}</text>`).join('')}
         </svg>
       `;
-
       chartContainer.innerHTML = svg;
     }
 
     // ---------- RECORD FLOW ----------
-    function createRecord(m, s, sl) {
-      return { m: Number(m), s: Number(s), sl: Number(sl), t: Date.now() };
-    }
+    function createRecord(m, s, sl) { return { m: Number(m), s: Number(s), sl: Number(sl), t: Date.now() }; }
+    function loadHistory() { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; } catch(e){ return []; } }
+    function saveHistory(arr) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-5))); } catch(e){} }
+    function pushRecord(record) { const arr = loadHistory(); arr.push(record); const slice = arr.slice(-5); saveHistory(slice); return slice; }
 
-    // When user clicks Get Recommendation: decide, render, push to history, render chart
     go.addEventListener('click', () => {
       const m = Number(mood.value);
       const s = Number(stress.value);
       const sl = Number(sleep.value);
       const decision = decideRecommendation(m, s, sl);
       renderRecommendation(decision, { m, s, sl });
-
-      // push to local history
       const newHistory = pushRecord(createRecord(m, s, sl));
       renderChart(newHistory);
     });
 
-    // sample scenarios (also push to history so you can demo chart)
     sample.addEventListener('click', () => {
       const scenarios = [
         {m:0, s:10, sl:0},
@@ -521,22 +476,18 @@
       const sidx = scenarios[Math.floor(Math.random()*scenarios.length)];
       mood.value = sidx.m; stress.value = sidx.s; sleep.value = sidx.sl;
       updateLabels();
-
       const decision = decideRecommendation(sidx.m, sidx.s, sidx.sl);
       renderRecommendation(decision, { m: sidx.m, s: sidx.s, sl: sidx.sl });
-
       const newHistory = pushRecord(createRecord(sidx.m, sidx.s, sidx.sl));
       renderChart(newHistory);
     });
 
-    // Reset -> set sliders to 0 and hide results & history unchanged
     reset.addEventListener('click', () => {
       mood.value = 0; stress.value = 0; sleep.value = 0; updateLabels();
       result.classList.remove('show'); result.innerHTML = ""; result.setAttribute('aria-hidden','true');
       safetyBanner.classList.remove('show'); consentBox.classList.remove('show');
     });
 
-    // Consent interactions (same as before)
     consentCheck.addEventListener('change', () => { consentProceed.disabled = !consentCheck.checked; });
     consentProceed.addEventListener('click', () => {
       const decision = decideRecommendation(Number(mood.value), Number(stress.value), Number(sleep.value));
@@ -556,19 +507,21 @@
     });
     consentSkip.addEventListener('click', () => { consentBox.classList.remove('show'); });
 
-    // Load initial chart from localStorage on page load
     (function init() {
       const hist = loadHistory();
       renderChart(hist);
-      // keep sliders default to 0 and hide UI as requested
       mood.value = 0; stress.value = 0; sleep.value = 0; updateLabels();
       result.innerHTML = ""; result.classList.remove('show');
       safetyBanner.classList.remove('show'); consentBox.classList.remove('show');
     })();
 
-    // keyboard accessibility
     [mood, stress, sleep].forEach(s => s.addEventListener('keydown', (e) => { if (e.key === 'Enter') go.click(); }));
 
+    // make chart responsive on window resize
+    window.addEventListener('resize', () => {
+      const hist = loadHistory();
+      renderChart(hist);
+    });
   </script>
 </body>
 </html>
