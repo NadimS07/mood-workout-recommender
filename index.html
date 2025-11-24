@@ -79,7 +79,7 @@
 </head>
 <body>
   <main class="wrap" role="main" aria-labelledby="appTitle">
-    <!-- Hidden asset reference (environment can convert local path to URL) -->
+    <!-- Hidden local asset reference (will be transformed to a URL by your environment) -->
     <img id="asset-ref" src="/mnt/data/fd0f65fa-cfd1-4309-8000-4a53a79bf909.png" alt="" style="display:none" />
 
     <header>
@@ -97,20 +97,20 @@
 
       <div class="row">
         <div class="col">
-          <label for="mood">Mood (0 sad — 10 happy): <strong id="moodVal">6</strong></label>
-          <div class="slider-wrap"><input id="mood" type="range" min="0" max="10" value="6" aria-label="Mood slider"></div>
+          <label for="mood">Mood (0 sad — 10 happy): <strong id="moodVal">0</strong></label>
+          <div class="slider-wrap"><input id="mood" type="range" min="0" max="10" value="0" aria-label="Mood slider"></div>
         </div>
 
         <div class="col">
-          <label for="stress">Stress (0 low — 10 high): <strong id="stressVal">5</strong></label>
-          <div class="slider-wrap"><input id="stress" type="range" min="0" max="10" value="5" aria-label="Stress slider"></div>
+          <label for="stress">Stress (0 low — 10 high): <strong id="stressVal">0</strong></label>
+          <div class="slider-wrap"><input id="stress" type="range" min="0" max="10" value="0" aria-label="Stress slider"></div>
         </div>
       </div>
 
       <div class="row" style="align-items:center;margin-top:10px">
         <div style="flex:1;min-width:220px">
-          <label for="sleep">Sleep last night (hours / 10): <strong id="sleepVal">7</strong></label>
-          <div class="slider-wrap"><input id="sleep" type="range" min="0" max="10" value="7" aria-label="Sleep slider"></div>
+          <label for="sleep">Sleep last night (hours / 10): <strong id="sleepVal">0</strong></label>
+          <div class="slider-wrap"><input id="sleep" type="range" min="0" max="10" value="0" aria-label="Sleep slider"></div>
         </div>
 
         <div style="display:flex;gap:10px;align-items:center">
@@ -122,11 +122,11 @@
 
       <div class="glow" aria-hidden="true"></div>
 
-      <section id="result" class="result" role="status" aria-live="polite">
+      <section id="result" class="result" role="status" aria-live="polite" aria-hidden="true">
         <!-- JS will populate -->
       </section>
 
-      <!-- Consent area: shown only for high-risk states before showing any movement suggestions -->
+      <!-- Consent area (shown only in high-risk scenarios) -->
       <div id="consentBox" class="consent" role="group" aria-label="Consent for low-arousal movement suggestions">
         <label style="display:flex;align-items:center;gap:8px">
           <input id="consentCheck" type="checkbox" />
@@ -287,7 +287,7 @@
       // if immediate_recovery, show banner and consent area
       if (decision.primary === 'immediate_recovery') {
         safetyBanner.classList.add('show');
-        // render primary summary but hide optional movement steps until consent
+        consentBox.classList.remove('show'); // reset consent until user triggers
         result.classList.remove('show');
         setTimeout(() => {
           result.innerHTML = `
@@ -380,10 +380,21 @@
       renderRecommendation(decision, { m: sidx.m, s: sidx.s, sl: sidx.sl });
     });
 
+    // RESET: sliders to 0, hide any recommendation & safety/consent UI
     reset.addEventListener('click', () => {
-      mood.value = 6; stress.value = 5; sleep.value = 7; updateLabels();
-      const decision = decideRecommendation(6,5,7);
-      renderRecommendation(decision, { m:6, s:5, sl:7 });
+      mood.value = 0;
+      stress.value = 0;
+      sleep.value = 0;
+      updateLabels();
+
+      // hide recommendation completely
+      result.classList.remove('show');
+      result.innerHTML = "";
+      result.setAttribute('aria-hidden','true');
+
+      // hide safety & consent UI
+      safetyBanner.classList.remove('show');
+      consentBox.classList.remove('show');
     });
 
     // Consent interactions
@@ -391,10 +402,7 @@
       consentProceed.disabled = !consentCheck.checked;
     });
     consentProceed.addEventListener('click', () => {
-      // reveal gentle movement suggestions (if any) appended under result
-      // We'll append grounding_stress content (if exists) as optional movements
       const decision = decideRecommendation(Number(mood.value), Number(stress.value), Number(sleep.value));
-      // Only append optional gentle movement for safety scenarios
       if (decision.primary === 'immediate_recovery') {
         const optional = SUGGESTIONS.grounding_stress;
         if (!optional) return;
@@ -405,22 +413,22 @@
             <ul style="margin:8px 0 0 18px;color:var(--success)">${optional.steps.map(s => `<li>${s}</li>`).join('')}</ul>
           </div>
         `;
-        // Append to result
         result.insertAdjacentHTML('beforeend', optionalHtml);
-        // Hide consent box once used
         consentBox.classList.remove('show');
-        safetyBanner.classList.add('show');
       }
     });
 
     consentSkip.addEventListener('click', () => {
       consentBox.classList.remove('show');
-      // keep safety banner visible but do not append movements
     });
 
-    // show default on load
-    const initial = decideRecommendation(6,5,7);
-    renderRecommendation(initial, { m:6, s:5, sl:7 });
+    // On load: sliders default to 0 (as set in HTML). Do NOT show any recommendation.
+    updateLabels();
+    // ensure UI is clean on initial load:
+    result.innerHTML = "";
+    result.classList.remove('show');
+    safetyBanner.classList.remove('show');
+    consentBox.classList.remove('show');
 
     // keyboard accessibility: Enter triggers Get Recommendation
     [mood, stress, sleep].forEach(s => s.addEventListener('keydown', (e) => {
