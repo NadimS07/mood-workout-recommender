@@ -92,12 +92,6 @@
       box-sizing: border-box;
     }
     .safety-box.show { display:block; }
-
-    .safety-box .icon {
-      width:100%; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;
-    }
-    .safety-box .icon img { max-width:100%; max-height:100%; border-radius:6px; object-fit:cover; opacity:0.95; }
-
     .safety-box .text {
       font-size:12px; color:#ffece8; font-weight:700; margin-bottom:8px;
       background: linear-gradient(90deg,#2f2330,#1b2a30); padding:8px;border-radius:8px;
@@ -124,10 +118,6 @@
 
       <!-- Safety box (placed left of card) -->
       <div id="safetyBox" class="safety-box" aria-hidden="true" role="status" aria-live="polite">
-        <div class="icon">
-          <!-- local image path provided in your environment -->
-          <img src="/mnt/data/272c6218-0bf1-459e-b959-5fcee45b090a.png" alt="safety image" />
-        </div>
         <div class="text" id="safetyTitle">⚠️ Safety first</div>
         <div class="sub" id="safetyText">You reported extremely low sleep, very high stress, or very low mood. Prioritize rest and safety — avoid intense exercise now. If at risk, contact emergency services.</div>
       </div>
