@@ -77,6 +77,10 @@
     .result h3{margin:0 0 8px 0;font-size:16px}
     .result p{margin:0;color:var(--success);white-space:pre-wrap;font-size:14px}
     .result .sub{display:block;margin-top:10px;color:var(--muted);font-size:13px}
+    .meta-list{margin-top:10px;color:var(--muted);font-size:13px}
+
+    .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+    .micro { background: rgba(255,255,255,0.02); padding:8px 10px; border-radius:8px; color:var(--muted); border:1px solid rgba(255,255,255,0.02); font-weight:700; font-size:13px }
 
     /* glow behind card */
     .glow{
@@ -90,9 +94,6 @@
 
     /* small helper & footer */
     footer{display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px; padding-top:6px}
-    .tweet{margin-left:auto;text-decoration:none;color:var(--muted);background:rgba(255,255,255,0.02);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
-    .tweet:hover{color:#bdf3ff; transform: translateY(-2px)}
-
     .summary{margin-top:12px;color:var(--muted);font-size:13px}
 
     /* small screens */
@@ -166,28 +167,92 @@
 
   <script>
     /* -------------------------
-       CONTENT (edit to prefer clinical or consumer tone)
+       CONTENT: richer suggestions with exercises + quick options
        ------------------------- */
-    const SUGGEST = {
-      high_stress: {
-        title: "🧘 Restorative Mobility + Breathwork",
-        description: "10–15 min gentle mobility flow with diaphragmatic breathing. Focus on slow, controlled breaths and simple joint mobility to reduce arousal and restore calm."
+    const SUGGESTIONS = {
+      sleep_recovery: {
+        title: "🛌 Sleep Recovery + Low-Arousal Recovery",
+        short: "Prioritize rest and low-arousal recovery before high-intensity exercise.",
+        description: `When sleep is extremely low, the nervous system is fragile. Focus on restorative breathing, very light mobility, and rest. Avoid heavy resistance or long cardio until you get restorative sleep.`,
+        quick: "10-min: 6–8 min guided breathing + 2–4 min gentle mobility (neck/shoulder/hip circles).",
+        steps: [
+          "2–3 min diaphragmatic breathing (4s in, 6s out)",
+          "5–8 min gentle mobility: cat-cow, hip circles, shoulder rolls",
+          "Optional: 10–20 min light walk if you feel alert enough"
+        ],
+        why: [
+          "Sleep deprivation amplifies stress and injury risk.",
+          "Low-arousal recovery reduces sympathetic activation and supports cognitive recovery."
+        ],
+        intensity: "Low"
       },
-      low_mood: {
-        title: "🏃 Short Cardio Burst (Mood Booster)",
-        description: "20 minutes moderate cardio (brisk walk or cycling). Rhythmic movement promotes endorphin release and can quickly improve positive affect."
+
+      grounding_stress: {
+        title: "🧘 Grounding + Short Low-Intensity Movement",
+        short: "Immediate grounding + short, low-intensity movement to reduce acute stress.",
+        description: `Start with 3–5 minutes of grounding breathing, then a short gentle routine (mobility/walk). This reduces physiological arousal and gives instant affect regulation.`,
+        quick: "10-min: 3 min box/belly breathing + 7 min brisk walk or mobility flow.",
+        steps: [
+          "3–5 min box (4-4-4-4) or 4-6 diaphragmatic breaths",
+          "5–7 min brisk walking or alternating standing marches",
+          "2 min progressive muscle relaxation (tension/release)"
+        ],
+        why: [
+          "Breathing slows heart rate and reduces the stress response.",
+          "Short movement releases tension without raising arousal too much."
+        ],
+        intensity: "Very low — Low"
       },
-      poor_sleep: {
-        title: "🧎 Gentle Yoga & Progressive Relaxation",
-        description: "20–25 minutes of calming stretches + progressive muscle relaxation to lower physiological tension and support restorative sleep."
+
+      mood_activation: {
+        title: "🏃 Behavioral Activation — Short Cardio Burst",
+        short: "Short, focused cardio to raise mood and energy.",
+        description: `Use a 20-minute moderate cardio session to trigger endorphin release and increase positive affect. If energy is low, reduce duration to 10–12 minutes.`,
+        quick: "10-min: 5 min warm-up + 7–8 min moderate steady-state cardio.",
+        steps: [
+          "5 min warm-up (dynamic movements)",
+          "12–20 min moderate cardio (brisk walk/jog/cycle)",
+          "3–5 min cool down + breathing"
+        ],
+        why: [
+          "Rhythmic cardio has a robust mood-lifting effect.",
+          "Short sessions reduce activation barriers and build momentum."
+        ],
+        intensity: "Moderate"
       },
-      active: {
+
+      strength_boost: {
         title: "💪 Strength Session — Full Body",
-        description: "30–40 minutes of resistance work focusing on compound movements. Builds competence and self-efficacy — ideal when energy and mood are good."
+        short: "Resistance training for competence and self-efficacy.",
+        description: `A 30–40 minute full-body resistance session focusing on compound movements (squats, push, hinge). Good for days with higher mood and low stress.`,
+        quick: "10-min: 2–3 rounds of a mini-circuit (bodyweight squats, push-ups, plank).",
+        steps: [
+          "3–5 min warm-up",
+          "3–5 sets of compound moves (squat, row/pull, hinge)",
+          "5–8 min mobility + breathing"
+        ],
+        why: [
+          "Strength training improves perceived control and long-term mood.",
+          "Structured progress supports self-efficacy."
+        ],
+        intensity: "Moderate — High"
       },
-      default: {
+
+      balanced: {
         title: "⚖️ Balanced Session",
-        description: "30-minute mixed session: 8-min warm-up, 15-min focused work (cardio or strength), 7-min cool-down + breathing. Track how you feel after."
+        short: "A safe mixed session when no single factor dominates.",
+        description: `A 30-minute balanced routine mixing warm-up, moderate work, and cool-down. Useful as a daily default and for tracking responses.`,
+        quick: "10-min: 3 min warm-up, 5 min focused work, 2 min cool-down.",
+        steps: [
+          "8 min warm-up (mobility + light cardio)",
+          "15 min focused work (cardio or strength)",
+          "7 min cool-down + breathing"
+        ],
+        why: [
+          "Balanced sessions allow experimenting with what helps your mood most.",
+          "Tracking helps identify patterns across days."
+        ],
+        intensity: "Moderate"
       }
     };
 
@@ -205,7 +270,6 @@
     const reset = document.getElementById('reset');
     const result = document.getElementById('result');
 
-    // keep labels updated
     function updateLabels(){
       moodVal.textContent = mood.value;
       stressVal.textContent = stress.value;
@@ -214,69 +278,167 @@
     [mood, stress, sleep].forEach(el => el.addEventListener('input', updateLabels));
     updateLabels();
 
-    // heuristics (explainable)
-    function pickRecommendation(m, s, sl){
-      if (m <= 3 || s >= 8) return SUGGEST.high_stress;
-      if (m <= 5) return SUGGEST.low_mood;
-      if (sl <= 4) return SUGGEST.poor_sleep;
-      if (m >= 7 && s <= 4) return SUGGEST.active;
-      return SUGGEST.default;
+    /* -------------------------
+       CORE DECISION: improved, priority-aware
+       ------------------------- */
+    function decideRecommendation(m, s, sl) {
+      // m: mood 0-10 (0 sad)
+      // s: stress 0-10 (10 high)
+      // sl: sleep 0-10 (hours /10) so sl=0 means 0 hours
+
+      // Priority rules:
+      // 1) If very low sleep (<=2) => sleep recovery first
+      // 2) If extreme stress (>=9) AND low mood (<=3) => combined grounding + brief activation
+      // 3) If extreme stress (>=8) => grounding_stress
+      // 4) If very low mood (<=4) => mood_activation
+      // 5) If low sleep (<=4) => sleep_recovery (less urgent than <=2)
+      // 6) If high mood & low stress => strength_boost
+      // 7) default => balanced
+
+      // We'll also detect when multiple signals present and add a secondary suggestion.
+
+      const primaryCandidates = [];
+      const secondary = [];
+
+      if (sl <= 2) {
+        primaryCandidates.push('sleep_recovery');
+        // If stress is extremely high too, suggest grounding as secondary
+        if (s >= 8) secondary.push('grounding_stress');
+        return { primary: primaryCandidates[0], secondary: secondary[0] || null };
+      }
+
+      if (s >= 9 && m <= 3) {
+        primaryCandidates.push('grounding_stress');
+        secondary.push('mood_activation'); // short activation after grounding
+        return { primary: primaryCandidates[0], secondary: secondary[0] };
+      }
+
+      if (s >= 8) {
+        primaryCandidates.push('grounding_stress');
+        if (m <= 4) secondary.push('mood_activation');
+        return { primary: primaryCandidates[0], secondary: secondary[0] || null };
+      }
+
+      if (m <= 4) {
+        primaryCandidates.push('mood_activation');
+        if (sl <= 4) secondary.push('sleep_recovery');
+        return { primary: primaryCandidates[0], secondary: secondary[0] || null };
+      }
+
+      if (sl <= 4) {
+        primaryCandidates.push('sleep_recovery');
+        return { primary: primaryCandidates[0], secondary: null };
+      }
+
+      if (m >= 7 && s <= 4) {
+        primaryCandidates.push('strength_boost');
+        return { primary: primaryCandidates[0], secondary: null };
+      }
+
+      // fallback
+      return { primary: 'balanced', secondary: null };
     }
 
-    // render recommendation with animation
-    function showRecommendation(rec, metaText = ''){
-      // fade-out old then show new
+    /* -------------------------
+       RENDERING: friendly, actionable, and explainable
+       ------------------------- */
+    function renderRecommendation(primaryKey, secondaryKey, reported) {
+      const primary = SUGGESTIONS[primaryKey];
+      const secondary = secondaryKey ? SUGGESTIONS[secondaryKey] : null;
+
+      // build "Why this" bullets
+      const whyBullets = [];
+      primary.why.forEach(w => whyBullets.push(w));
+      if (secondary) {
+        whyBullets.push(`Also suggested: ${secondary.title} — helps address ${secondary.short.toLowerCase()}.`);
+      }
+
+      // intensity hint
+      const intensity = primary.intensity || (primaryKey === 'balanced' ? 'Moderate' : 'Low');
+
+      // Build actionable markup
+      let stepsHtml = '';
+      if (primary.steps && primary.steps.length) {
+        stepsHtml = '<ul style="margin:8px 0 0 18px;color:var(--success)">';
+        primary.steps.forEach(s => stepsHtml += `<li>${s}</li>`);
+        stepsHtml += '</ul>';
+      }
+
+      // Quick 10-min option
+      const quick = primary.quick ? `<div style="margin-top:10px"><strong>If 10 minutes:</strong> ${primary.quick}</div>` : '';
+
+      // Secondary suggestion box
+      const secondaryHtml = secondary ? `
+        <div style="margin-top:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)">
+          <strong style="display:block;margin-bottom:6px;color:var(--muted)">${secondary.title}</strong>
+          <div style="color:var(--muted);font-size:13px">${secondary.short}</div>
+        </div>
+      ` : '';
+
+      // meta
+      const metaText = `You reported mood ${reported.m}, stress ${reported.s}, sleep ${reported.sl}. Suggested intensity: ${intensity}.`;
+
+      // Render
       result.classList.remove('show');
       setTimeout(() => {
         result.innerHTML = `
-          <h3>${rec.title}</h3>
-          <p>${rec.description}</p>
-          <span class="sub">${metaText}</span>
+          <h3>${primary.title}</h3>
+          <p>${primary.description}</p>
+          ${stepsHtml}
+          ${quick}
+          ${secondaryHtml}
+          <div class="meta-list">
+            <strong>Why this?</strong>
+            <ul style="margin:6px 0 0 18px;color:var(--muted);font-size:13px">
+              ${whyBullets.map(b => `<li>${b}</li>`).join('')}
+            </ul>
+          </div>
+          <div class="sub" style="margin-top:10px">${metaText}</div>
         `;
         result.classList.add('show');
-      }, 90);
+      }, 80);
     }
 
-    // event handlers
+    /* -------------------------
+       EVENTS
+       ------------------------- */
     go.addEventListener('click', () => {
       const m = Number(mood.value);
       const s = Number(stress.value);
       const sl = Number(sleep.value);
-      const rec = pickRecommendation(m,s,sl);
-      const meta = `You reported mood ${m}, stress ${s}, sleep ${sl}.`;
-      showRecommendation(rec, meta);
+
+      const decision = decideRecommendation(m, s, sl);
+      renderRecommendation(decision.primary, decision.secondary, { m, s, sl });
     });
 
     sample.addEventListener('click', () => {
-      // cycle sample scenarios for demo
       const scenarios = [
-        {m:2,s:9,sl:6, recKey:'high_stress'},
-        {m:4,s:5,sl:6, recKey:'low_mood'},
-        {m:8,s:3,sl:8, recKey:'active'},
-        {m:6,s:5,sl:3, recKey:'poor_sleep'}
+        {m:1,s:10,sl:0},   // very stressed + no sleep
+        {m:3,s:8,sl:6},    // low mood + high stress
+        {m:2,s:4,sl:2},    // low mood + poor sleep
+        {m:8,s:2,sl:8},    // active day
       ];
-      // pick random sample
       const s = scenarios[Math.floor(Math.random()*scenarios.length)];
       mood.value = s.m; stress.value = s.s; sleep.value = s.sl;
       updateLabels();
-      showRecommendation(SUGGEST[s.recKey], `Sample scenario — mood ${s.m}, stress ${s.s}, sleep ${s.sl}.`);
+      const decision = decideRecommendation(s.m, s.s, s.sl);
+      renderRecommendation(decision.primary, decision.secondary, { m: s.m, s: s.s, sl: s.sl });
     });
 
     reset.addEventListener('click', () => {
       mood.value = 6; stress.value = 5; sleep.value = 7; updateLabels();
-      showRecommendation(SUGGEST.default, 'Default recommendation.');
+      const dec = decideRecommendation(6,5,7);
+      renderRecommendation(dec.primary, dec.secondary, { m:6, s:5, sl:7 });
     });
 
     // show default on load
-    showRecommendation(SUGGEST.default, 'Default recommendation.');
+    const initial = decideRecommendation(6,5,7);
+    renderRecommendation(initial.primary, initial.secondary, { m:6, s:5, sl:7 });
 
-    // accessibility: keyboard trigger using Enter while focus on any slider triggers "Get Recommendation"
-    [mood, stress, sleep].forEach(s => {
-      s.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { go.click(); }
-      });
-    });
-
+    // accessibility: Enter on sliders triggers get recommendation
+    [mood, stress, sleep].forEach(s => s.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') go.click();
+    }));
   </script>
 </body>
 </html>
