@@ -4,277 +4,229 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Mood → Workout Recommender — Nadim Sheikh</title>
-  <meta name="description" content="A compact, psychology-informed Mood to Workout recommender with local history chart. Static demo — no backend.">
+  <meta name="description" content="Mood → Workout Recommender — static demo with local history. Fits single viewport."/>
   <style>
     :root{
       --bg-1:#041022; --bg-2:#07162a; --muted:#9bb0c3;
-      --accent-1:#67e6ff; --accent-2:#3ad6c9; --glass: rgba(255,255,255,0.03);
+      --accent-1:#67e6ff; --accent-2:#3ad6c9;
       --mood-color:#67e6ff; --stress-color:#ff9f6b; --sleep-color:#9be67a;
-      --success:#e8fbff; --radius:14px; --shadow-lg: 0 18px 40px rgba(2,10,20,0.6);
-      --shadow-sm: 0 6px 18px rgba(2,6,12,0.45);
+      --card-radius:12px; --shadow: 0 14px 36px rgba(2,10,20,0.6);
+      --glass: rgba(255,255,255,0.02);
       font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
     }
 
-    html,body{height:100%;margin:0;background:
-      radial-gradient(900px 400px at 12% 10%, rgba(12,40,70,0.12), transparent 8%),
-      linear-gradient(180deg,var(--bg-1), var(--bg-2));
-      color:#eaf8ff; display:flex; align-items:center; justify-content:center; padding:48px; }
+    /* Prevent page-level scrolling so the browser viewport is static */
+    html,body{height:100%;margin:0;overflow:hidden;background:
+      radial-gradient(900px 400px at 8% 8%, rgba(12,40,70,0.12), transparent 8%),
+      linear-gradient(180deg,var(--bg-1), var(--bg-2)); color:#eaf8ff;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
 
-    /* wrap now has top padding so fixed banner doesn't overlap content */
-    .wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:18px; padding-top:72px;}
-    header{display:block;margin-bottom:6px}
+    /* overall layout fits exactly in viewport */
+    .app {
+      height:100vh; width:100%; display:flex; align-items:center; justify-content:center;
+      padding:20px;
+      box-sizing:border-box;
+    }
+
+    /* compact centered panel */
+    .panel {
+      width:100%; max-width:1000px; height: calc(100vh - 40px);
+      display:grid; grid-template-rows: auto 1fr auto; gap:10px;
+      align-items:start;
+    }
+
+    header { padding:6px 10px; }
     h1{margin:0;font-size:20px}
-    p.lead{margin:8px 0 0 0;color:var(--muted);font-size:13px}
+    p.lead{margin:6px 0 0 0;color:var(--muted);font-size:12px}
 
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
-      border-radius:var(--radius); padding:18px; box-shadow:var(--shadow-lg); border:1px solid rgba(255,255,255,0.03);
-      backdrop-filter: blur(8px);
+    /* main card (scrollable internally if needed) */
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius: var(--card-radius); padding:12px; box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.03);
+      display:flex; flex-direction:column; gap:10px; overflow:auto;
+      scroll-behavior:smooth;
     }
 
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    .col{flex:1;min-width:200px}
-    label{display:block;color:var(--muted);font-size:13px;margin-bottom:8px}
-    .slider-wrap{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); padding:10px;border-radius:10px}
-    input[type="range"]{width:100%; accent-color: var(--accent-1)}
+    /* Inputs compact */
+    .inputs { display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:start; }
+    .single-row { display:flex; align-items:center; gap:12px; }
+    label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+    .slider-wrap{background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); padding:8px;border-radius:8px}
+    input[type="range"]{width:100%; accent-color: var(--accent-1); height:28px}
 
-    .controls{display:flex; gap:10px; align-items:center}
-    .btn{
-      background:linear-gradient(180deg,var(--accent-1), #39d7e3); border:none; color:#042026; padding:10px 14px; border-radius:10px; font-weight:800;
-      cursor:pointer; box-shadow:var(--shadow-sm);
+    .controls { display:flex; gap:8px; align-items:center; justify-content:flex-start; flex-wrap:wrap; }
+    .btn {
+      background: linear-gradient(180deg,var(--accent-1), #39d7e3); color:#042026; border:0; padding:8px 12px; border-radius:8px; font-weight:800; cursor:pointer;
+      box-shadow: 0 8px 20px rgba(15,113,131,0.08);
+      font-size:13px;
     }
-    .btn.secondary{ background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); font-weight:700 }
-    .btn:focus{ outline:2px solid rgba(103,230,255,0.12) }
+    .btn.secondary { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); font-weight:700; padding:7px 10px; }
 
-    .glow{position:relative;margin-top:-28px;height:120px;pointer-events:none}
-    .glow:before{
-      content:""; position:absolute; left:50%; transform:translateX(-50%); width:84%; height:140px; border-radius:28px;
-      background: radial-gradient(450px 120px at 50% 10%, rgba(103,230,255,0.06), transparent 30%);
-      filter: blur(22px); z-index:0;
+    /* result compact style */
+    .result {
+      border-radius:10px; padding:12px; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+      border-left:4px solid rgba(103,230,255,0.06);
+      transition: all .28s ease; font-size:13px;
     }
+    .result h3 { margin:0 0 6px 0; font-size:14px; display:flex; align-items:center; gap:8px; }
+    .result p { margin:0;color:#eaf8ff; white-space:pre-wrap; font-size:13px; line-height:1.25 }
+    .result ul { margin:6px 0 0 18px; color:var(--muted); font-size:13px; }
 
-    .result{ margin-top:14px; padding:14px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
-      border-left:4px solid rgba(103,230,255,0.06); opacity:0; transform:translateY(12px); transition: all .36s cubic-bezier(.2,.9,.25,1);
-    }
-    .result.show{opacity:1; transform:translateY(0)}
-    .result h3{margin:0 0 8px 0;font-size:16px}
-    .result p{margin:0;color:var(--success);white-space:pre-wrap;font-size:14px}
-    .result .sub{display:block;margin-top:10px;color:var(--muted);font-size:13px}
-    .meta-list{margin-top:10px;color:var(--muted);font-size:13px}
+    .meta { margin-top:8px; color:var(--muted); font-size:12px }
 
-    /* Fixed safety banner so it stays visible */
+    /* chart area compact */
+    .history { display:flex; gap:12px; align-items:center; justify-content:space-between; margin-top:6px; }
+    .chart { width:340px; height:96px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:transparent; }
+    .chart-legend { display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
+
+    /* consent and safety banner */
+    .consent { display:none; margin-top:8px; padding:10px; border-radius:8px; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.02); font-size:13px; }
+    .consent.show { display:block; }
     .safety-banner {
-      position: fixed;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 40px);
-      max-width: 880px;
-      z-index: 9999;
-      padding: 14px 18px;
-      border-radius: 12px;
-      background: linear-gradient(90deg,#2f2330,#1b2a30);
-      border: 1px solid rgba(255,255,255,0.05);
-      color: #ffece8;
-      font-weight: 700;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-      display: none;
+      position: fixed; top:12px; left:50%; transform:translateX(-50%); z-index:9999;
+      width:calc(100% - 40px); max-width:980px; padding:10px 14px; border-radius:10px;
+      background:linear-gradient(90deg,#2f2330,#1b2a30); border:1px solid rgba(255,255,255,0.04); color:#ffece8; font-weight:700; display:none;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+      font-size:13px;
     }
     .safety-banner.show { display:block; }
 
-    .consent { display:none; margin-top:10px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.02); }
-    .consent.show{display:block}
+    footer{color:var(--muted); font-size:12px; padding:6px 10px; text-align:left}
 
-    /* Chart area */
-    .history {
-      margin-top:14px; padding:12px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
-      border:1px solid rgba(255,255,255,0.02);
+    /* smaller screens: reduce gaps/fonts further */
+    @media (max-height:720px) {
+      .panel { gap:6px; padding-top:52px; }
+      .card { padding:10px; gap:8px; }
+      h1 { font-size:18px }
+      .chart { width:260px; height:80px; }
+      .result { font-size:12px }
     }
-    .chart-row { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap }
-    .chart-legend { display:flex; gap:10px; align-items:center; color:var(--muted); font-size:13px }
-    .legend-dot { width:10px;height:10px;border-radius:999px; display:inline-block; margin-right:6px }
-    .no-history { color:var(--muted); font-size:13px; padding:12px 0 }
-
-    footer{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;padding-top:6px}
-
-    @media (max-width:920px){ .wrap{padding:0 12px 12px 12px} }
-    @media (max-width:640px){ body{padding:24px} .glow{display:none} .safety-banner { width: calc(100% - 32px); top: 12px; } }
+    @media (max-width:880px){
+      .inputs { grid-template-columns: 1fr; }
+      .chart { width:100%; height:80px; }
+    }
   </style>
 </head>
 <body>
-  <main class="wrap" role="main" aria-labelledby="appTitle">
-    <!-- Hidden local asset reference (transformable) -->
-    <img id="asset-ref" src="/mnt/data/26fd4b71-2251-4246-9100-b25c3db7e95d.png" alt="" style="display:none" />
+  <div class="app" aria-hidden="false">
+    <div class="panel" role="application" aria-labelledby="appTitle">
+      <!-- hidden local asset; your environment may transform path to URL -->
+      <img id="assetRef" src="/mnt/data/6669e534-386b-4684-bcad-9fb921804696.png" alt="" style="display:none" />
 
-    <!-- Fixed safety banner (starts hidden; will show when high-risk) -->
-    <div id="safetyBanner" class="safety-banner" role="alert" aria-live="assertive">
-      ⚠️ <strong>Safety first:</strong> You reported extremely low sleep, very high stress, and very low mood. The immediate priority is safety and rest — do not start intense exercise right now. If you are in danger or thinking about harming yourself, contact emergency services immediately.
+      <!-- safety banner fixed (won't scroll) -->
+      <div id="safetyBanner" class="safety-banner" role="alert" aria-live="assertive"></div>
+
+      <!-- header -->
+      <header>
+        <h1 id="appTitle">Mood → Workout Recommender</h1>
+        <p class="lead">Psychology-informed quick recommendations using simple, explainable rules. Static demo — no backend.</p>
+      </header>
+
+      <!-- main card (scrolls internally only) -->
+      <section class="card" aria-label="Main controls and results">
+        <!-- inputs -->
+        <div class="inputs" aria-hidden="false">
+          <div>
+            <label for="mood">Mood (0 sad — 10 happy): <strong id="moodVal">0</strong></label>
+            <div class="slider-wrap"><input id="mood" type="range" min="0" max="10" value="0" aria-label="Mood slider"></div>
+          </div>
+          <div>
+            <label for="stress">Stress (0 low — 10 high): <strong id="stressVal">0</strong></label>
+            <div class="slider-wrap"><input id="stress" type="range" min="0" max="10" value="0" aria-label="Stress slider"></div>
+          </div>
+
+          <div style="grid-column:1 / -1;">
+            <label for="sleep">Sleep last night (hours / 10): <strong id="sleepVal">0</strong></label>
+            <div class="slider-wrap"><input id="sleep" type="range" min="0" max="10" value="0" aria-label="Sleep slider"></div>
+          </div>
+
+          <div style="grid-column:1 / -1; display:flex; justify-content:flex-start; gap:8px; margin-top:6px">
+            <button id="go" class="btn">Get Recommendation</button>
+            <button id="sample" class="btn secondary">Try sample</button>
+            <button id="reset" class="btn secondary">Reset</button>
+          </div>
+        </div>
+
+        <!-- result (initially hidden) -->
+        <div id="result" class="result" aria-live="polite" style="display:none"></div>
+
+        <!-- consent (only shows for safety scenarios) -->
+        <div id="consentBox" class="consent" role="group" aria-label="consent area">
+          <label style="display:flex;align-items:center;gap:8px">
+            <input id="consentCheck" type="checkbox" />
+            <span style="color:var(--muted);font-size:12px">I understand this is a safety-first recovery plan. I give consent to see optional gentle movement suggestions (only if I feel safe).</span>
+          </label>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <button id="consentProceed" class="btn" disabled>Show suggestions</button>
+            <button id="consentSkip" class="btn secondary">Skip suggestions</button>
+          </div>
+        </div>
+
+        <!-- compact history & chart row -->
+        <div class="history" aria-label="history and chart">
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Recent submissions (last 5)</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="clearHistory" class="btn secondary" style="font-size:12px;padding:6px 8px">Clear history</button>
+            </div>
+          </div>
+          <div class="chart" id="chartContainer" aria-hidden="false">
+            <div style="color:var(--muted);font-size:12px">No history yet — submit to record.</div>
+          </div>
+        </div>
+
+      </section>
+
+      <footer>
+        Built by <strong>Nadim Sheikh</strong>
+      </footer>
     </div>
-
-    <header>
-      <h1 id="appTitle">Mood → Workout Recommender</h1>
-      <p class="lead">Psychology-informed quick recommendations using simple, explainable rules. Static demo — no backend.</p>
-    </header>
-
-    <section class="card" aria-labelledby="inputsHeading">
-      <h2 id="inputsHeading" style="position:absolute;left:-9999px;">Inputs</h2>
-
-      <div class="row">
-        <div class="col">
-          <label for="mood">Mood (0 sad — 10 happy): <strong id="moodVal">0</strong></label>
-          <div class="slider-wrap"><input id="mood" type="range" min="0" max="10" value="0" aria-label="Mood slider"></div>
-        </div>
-
-        <div class="col">
-          <label for="stress">Stress (0 low — 10 high): <strong id="stressVal">0</strong></label>
-          <div class="slider-wrap"><input id="stress" type="range" min="0" max="10" value="0" aria-label="Stress slider"></div>
-        </div>
-      </div>
-
-      <div class="row" style="align-items:center;margin-top:10px">
-        <div style="flex:1;min-width:220px">
-          <label for="sleep">Sleep last night (hours / 10): <strong id="sleepVal">0</strong></label>
-          <div class="slider-wrap"><input id="sleep" type="range" min="0" max="10" value="0" aria-label="Sleep slider"></div>
-        </div>
-
-        <div style="display:flex;gap:10px;align-items:center">
-          <button id="go" class="btn" aria-controls="result">Get Recommendation</button>
-          <button id="sample" class="btn secondary" title="Try sample scenarios">Try sample</button>
-          <button id="reset" class="btn secondary" title="Reset sliders">Reset</button>
-        </div>
-      </div>
-
-      <div class="glow" aria-hidden="true"></div>
-
-      <section id="result" class="result" role="status" aria-live="polite" aria-hidden="true"></section>
-
-      <!-- Consent area -->
-      <div id="consentBox" class="consent" role="group" aria-label="Consent for low-arousal movement suggestions">
-        <label style="display:flex;align-items:center;gap:8px">
-          <input id="consentCheck" type="checkbox" />
-          <span style="color:var(--muted)">I understand this is a safety-first recovery plan. I give consent to see optional gentle movement suggestions (only if I feel safe).</span>
-        </label>
-        <div style="margin-top:10px;display:flex;gap:8px">
-          <button id="consentProceed" class="btn" disabled>Show suggestions</button>
-          <button id="consentSkip" class="btn secondary">Skip suggestions</button>
-        </div>
-      </div>
-
-      <div style="margin-top:12px;color:var(--muted);font-size:13px">Psychology note: suggestions prioritize safety, affect regulation, and recovery. If you feel at risk, contact emergency services or a trusted person.</div>
-
-      <!-- History & Chart -->
-      <div class="history" aria-label="Recent submissions history">
-        <div class="chart-row" style="margin-bottom:8px">
-          <div style="display:flex;align-items:center;gap:12px">
-            <strong style="color:var(--muted)">Recent submissions (last 5)</strong>
-            <button id="clearHistory" class="btn secondary" title="Clear local history">Clear history</button>
-          </div>
-          <div class="chart-legend">
-            <span><span class="legend-dot" style="background:var(--mood-color)"></span> Mood</span>
-            <span><span class="legend-dot" style="background:var(--stress-color)"></span> Stress</span>
-            <span><span class="legend-dot" style="background:var(--sleep-color)"></span> Sleep</span>
-          </div>
-        </div>
-
-        <div id="chartContainer" style="width:100%;height:160px;border-radius:8px;overflow:hidden;background:transparent;display:flex;align-items:center;justify-content:center">
-          <div class="no-history">No history yet — submit a recommendation to create local history.</div>
-        </div>
-      </div>
-    </section>
-
-    <footer>
-      <div>Built by <strong>Nadim Sheikh</strong></div>
-    </footer>
-  </main>
+  </div>
 
   <script>
-    // ---------- DATA & SUGGESTIONS ----------
+    /* ---------- Constants & suggestions ---------- */
     const SUGGESTIONS = {
       immediate_recovery: {
-        title: "🛌 Immediate Recovery & Safety Plan — Rest First",
-        short: "Prioritize safety, rest, and very low-arousal recovery. No intense exercise.",
-        description: "You reported almost no sleep, very high stress, and very low mood. Stabilize first: breathe, hydrate, eat a light snack, rest. Avoid intense exercise until you've had restorative sleep.",
-        quick: "0–15 min: breathing (3–6 min) + water + light snack + rest; 15–90 min: short nap or guided relaxation.",
+        title: "🛌 Immediate Recovery — Rest First",
+        description: "Priority: safety and rest. Breathe, hydrate, eat a small snack, rest. Avoid intense exercise until you have restorative sleep.",
         steps: [
-          "Sit or lie down in a safe, comfortable place.",
-          "3–6 minutes diaphragmatic breathing (4s inhale — 6s exhale).",
+          "Sit/lie down in a safe, comfortable place.",
+          "3–6 min diaphragmatic breathing (4s inhale — 6s exhale).",
           "Drink ~200–300 ml water slowly.",
-          "If possible, eat a light snack (banana, yoghurt, or toast).",
+          "If possible, eat a light snack (banana, yoghurt, toast).",
           "Ask a trusted person for a 20–30 min check-in."
         ],
-        why: [
-          "Severe sleep loss amplifies stress response and increases injury risk.",
-          "Breathing, hydration, and short rest reduce physiological arousal and support safety."
-        ],
+        why: ["Severe sleep loss amplifies stress and injury risk.", "Breathing, hydration and short rest reduce physiological arousal."],
         intensity: "Very low"
       },
       grounding_stress: {
-        title: "🧘 Grounding + Short Low-Intensity Movement",
-        short: "Grounding breathing followed by gentle movement to reduce acute stress.",
-        description: "Start with 3–5 minutes of grounding breathing, then a gentle routine (mobility/walk). This reduces physiological arousal and gives immediate affect regulation.",
-        quick: "10-min: 3 min breathing + 7 min gentle walk or mobility.",
-        steps: [
-          "3–5 min box/belly breathing (4-4-4-4 or 4-6 diaphragmatic breaths).",
-          "5–7 min standing marches or light walk.",
-          "2 min progressive muscle relaxation (tension/release)."
-        ],
-        why: [
-          "Breathing reduces sympathetic activation.",
-          "Short movement releases tension without raising arousal too much."
-        ],
-        intensity: "Very low — Low"
+        title: "🧘 Grounding + Gentle Movement",
+        description: "3–5 min grounding breathing then 5–7 min light walk or standing mobility.",
+        steps: ["3–5 min breathing", "5–7 min gentle walk/standing marches", "2 min progressive relaxation"],
+        why: ["Breathing slows arousal.", "Short movement releases tension without raising arousal."],
+        intensity: "Very low"
       },
       mood_activation: {
         title: "🏃 Short Cardio Burst (Mood Booster)",
-        short: "Moderate cardio to raise mood and energy.",
-        description: "20 minutes of moderate cardio (brisk walk or cycling). If energy is very low, aim for 10–12 minutes.",
-        quick: "10-min: 5 min warm-up + 7–8 min steady cardio.",
-        steps: [
-          "5 min warm-up (dynamic moves).",
-          "12–20 min moderate cardio.",
-          "3–5 min cool down + breathing."
-        ],
-        why: [
-          "Rhythmic cardio has mood-lifting effects.",
-          "Short sessions reduce activation barriers and build momentum."
-        ],
+        description: "20 minutes moderate cardio. If energy low, target 10–12 min.",
+        steps: ["5 min warm-up", "12–20 min moderate cardio", "3–5 min cool down + breathing"],
         intensity: "Moderate"
       },
       strength_boost: {
         title: "💪 Strength Session — Full Body",
-        short: "Resistance training for competence and self-efficacy.",
-        description: "30–40 minutes of resistance training focusing on compound moves. Good on days with higher mood and low stress.",
-        quick: "10-min: 2–3 rounds bodyweight circuit (squats, push-ups, plank).",
-        steps: [
-          "3–5 min warm-up.",
-          "3–5 sets compound moves (squat, row/pull, hinge).",
-          "5–8 min mobility + breathing."
-        ],
-        why: [
-          "Strength training improves perceived control and long-term mood.",
-          "Structured progress supports self-efficacy."
-        ],
-        intensity: "Moderate — High"
+        description: "30–40 min resistance session focusing on compound moves.",
+        steps: ["3–5 min warm-up", "3–5 sets compound moves", "5–8 min mobility + breathing"],
+        intensity: "Moderate"
       },
       balanced: {
         title: "⚖️ Balanced Session",
-        short: "A safe mixed session when no single factor dominates.",
-        description: "30-minute balanced routine: warm-up, focused work, cool-down. Useful as a daily default and for tracking responses.",
-        quick: "10-min: 3 min warm-up, 5 min focused work, 2 min cool-down.",
-        steps: [
-          "8 min warm-up (mobility + light cardio).",
-          "15 min focused work (cardio or strength).",
-          "7 min cool-down + breathing."
-        ],
-        why: [
-          "Balanced sessions allow experimentation with what helps mood most.",
-          "Tracking helps identify patterns across days."
-        ],
+        description: "30-minute: warm-up, focused work, cool-down. Useful as default and for tracking responses.",
+        steps: ["8 min warm-up", "15 min focused work", "7 min cool-down + breathing"],
         intensity: "Moderate"
       }
     };
 
-    // ---------- DOM BINDINGS ----------
+    /* ---------- DOM refs ---------- */
     const mood = document.getElementById('mood');
     const stress = document.getElementById('stress');
     const sleep = document.getElementById('sleep');
@@ -301,227 +253,158 @@
     [mood, stress, sleep].forEach(el => el.addEventListener('input', updateLabels));
     updateLabels();
 
-    // ---------- LOCAL HISTORY ----------
+    /* ---------- Local history (last 5) ---------- */
     const STORAGE_KEY = 'mwr_history_v1';
-    function loadHistory() {
-      try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return []; return JSON.parse(raw); } catch(e){ console.error(e); return []; }
-    }
-    function saveHistory(arr) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-5))); } catch(e){ console.error(e); } }
-    function pushRecord(record) { const arr = loadHistory(); arr.push(record); const slice = arr.slice(-5); saveHistory(slice); return slice; }
-    function clearHistoryFn() { localStorage.removeItem(STORAGE_KEY); renderChart([]); }
+    function loadHistory(){ try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }catch(e){return[]} }
+    function saveHistory(arr){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-5))); }catch(e){} }
+    function pushRecord(rec){ const arr = loadHistory(); arr.push(rec); const slice = arr.slice(-5); saveHistory(slice); return slice; }
+    function clearHistoryFn(){ localStorage.removeItem(STORAGE_KEY); renderChart([]); }
     clearHistory.addEventListener('click', clearHistoryFn);
 
-    // ---------- DECISION ----------
-    function decideRecommendation(m, s, sl) {
-      if (sl <= 1 && s >= 9 && m <= 2) return { primary: 'immediate_recovery', secondary: null, highRisk: true };
-      if (sl <= 2) return { primary: 'immediate_recovery', secondary: (s >= 8 ? 'grounding_stress' : null), highRisk: false };
-      if (s >= 9 && m <= 3) return { primary: 'grounding_stress', secondary: 'mood_activation', highRisk: false };
-      if (s >= 8) return { primary: 'grounding_stress', secondary: (m <= 4 ? 'mood_activation' : null), highRisk: false };
-      if (m <= 4) return { primary: 'mood_activation', secondary: (sl <= 4 ? 'immediate_recovery' : null), highRisk: false };
-      if (sl <= 4) return { primary: 'immediate_recovery', secondary: null, highRisk: false };
-      if (m >= 7 && s <= 4) return { primary: 'strength_boost', secondary: null, highRisk: false };
-      return { primary: 'balanced', secondary: null, highRisk: false };
+    /* ---------- Decision logic (safety-first) ---------- */
+    function decideRecommendation(m,s,sl){
+      if (sl <= 1 && s >= 9 && m <= 2) return { primary:'immediate_recovery', secondary:null, highRisk:true };
+      if (sl <= 2) return { primary:'immediate_recovery', secondary:(s>=8?'grounding_stress':null), highRisk:false };
+      if (s >= 9 && m <= 3) return { primary:'grounding_stress', secondary:'mood_activation', highRisk:false };
+      if (s >= 8) return { primary:'grounding_stress', secondary:(m<=4?'mood_activation':null), highRisk:false };
+      if (m <= 4) return { primary:'mood_activation', secondary:(sl<=4?'immediate_recovery':null), highRisk:false };
+      if (sl <= 4) return { primary:'immediate_recovery', secondary:null, highRisk:false };
+      if (m >= 7 && s <= 4) return { primary:'strength_boost', secondary:null, highRisk:false };
+      return { primary:'balanced', secondary:null, highRisk:false };
     }
 
-    // ---------- RENDER ----------
-    function renderRecommendation(decision, reported) {
+    /* ---------- Render logic ---------- */
+    function renderRecommendation(decision, reported){
       const primary = SUGGESTIONS[decision.primary];
       const secondary = decision.secondary ? SUGGESTIONS[decision.secondary] : null;
 
       if (decision.primary === 'immediate_recovery') {
+        safetyBanner.textContent = '⚠️ Safety first: You reported extremely low sleep, very high stress, or very low mood. Prioritize rest and safety — avoid intense exercise now. If at risk, contact emergency services.';
         safetyBanner.classList.add('show');
-        consentBox.classList.remove('show');
-        result.classList.remove('show');
-        setTimeout(() => {
-          result.innerHTML = `
-            <h3>${primary.title}</h3>
-            <p>${primary.description}</p>
-            <div style="margin-top:8px;color:var(--muted);font-size:13px">
-              <strong>Immediate steps (0–15 min):</strong>
-              <ul style="margin:6px 0 0 18px;color:var(--success);font-size:14px">
-                ${primary.steps.map(s => `<li>${s}</li>`).join('')}
-              </ul>
-            </div>
-            <div class="meta-list">
-              <strong>Why this?</strong>
-              <ul style="margin:6px 0 0 18px;color:var(--muted);font-size:13px">
-                ${primary.why.map(w => `<li>${w}</li>`).join('')}
-              </ul>
-            </div>
-            <div class="sub" style="margin-top:10px">You reported mood ${reported.m}, stress ${reported.s}, sleep ${reported.sl}. Intensity: Very low.</div>
-          `;
-          result.classList.add('show');
-        }, 80);
+
+        // show primary summary (compact)
+        result.style.display = 'block';
+        result.innerHTML = `
+          <h3>${primary.title}</h3>
+          <p>${primary.description}</p>
+          <ul>${primary.steps.map(s => `<li>${s}</li>`).join('')}</ul>
+          <div class="meta">You reported mood ${reported.m}, stress ${reported.s}, sleep ${reported.sl}. Intensity: ${primary.intensity || 'Very low'}.</div>
+        `;
         consentBox.classList.add('show');
         consentCheck.checked = false;
         consentProceed.disabled = true;
         return;
       }
 
+      // non-safety flow
       safetyBanner.classList.remove('show');
       consentBox.classList.remove('show');
 
-      const whyBullets = primary.why.concat(secondary ? [`Also suggested: ${secondary.title} — ${secondary.short}`] : []);
-      const intensity = primary.intensity || 'Moderate';
-      let stepsHtml = '';
-      if (primary.steps && primary.steps.length) {
-        stepsHtml = '<ul style="margin:8px 0 0 18px;color:var(--success)">';
-        primary.steps.forEach(s => stepsHtml += `<li>${s}</li>`);
-        stepsHtml += '</ul>';
-      }
-      const quick = primary.quick ? `<div style="margin-top:10px"><strong>If 10 minutes:</strong> ${primary.quick}</div>` : '';
-      const secondaryHtml = secondary ? `
-        <div style="margin-top:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)">
-          <strong style="display:block;margin-bottom:6px;color:var(--muted)">${secondary.title}</strong>
-          <div style="color:var(--muted);font-size:13px">${secondary.short}</div>
-        </div>
-      ` : '';
-
-      result.classList.remove('show');
-      setTimeout(() => {
-        result.innerHTML = `
-          <h3>${primary.title}</h3>
-          <p>${primary.description}</p>
-          ${stepsHtml}
-          ${quick}
-          ${secondaryHtml}
-          <div class="meta-list">
-            <strong>Why this?</strong>
-            <ul style="margin:6px 0 0 18px;color:var(--muted);font-size:13px">
-              ${whyBullets.map(b => `<li>${b}</li>`).join('')}
-            </ul>
-          </div>
-          <div class="sub" style="margin-top:10px">You reported mood ${reported.m}, stress ${reported.s}, sleep ${reported.sl}. Suggested intensity: ${intensity}.</div>
-        `;
-        result.classList.add('show');
-      }, 80);
+      result.style.display = 'block';
+      result.innerHTML = `
+        <h3>${primary.title}</h3>
+        <p>${primary.description}</p>
+        <ul>${primary.steps.map(s => `<li>${s}</li>`).join('')}</ul>
+        <div class="meta">You reported mood ${reported.m}, stress ${reported.s}, sleep ${reported.sl}. Suggested intensity: ${primary.intensity || 'Moderate'}.</div>
+      `;
     }
 
-    // ---------- CHART ----------
-    function renderChart(history) {
+    /* ---------- Chart rendering (compact SVG) ---------- */
+    function renderChart(history){
       chartContainer.innerHTML = '';
       if (!history || !history.length) {
-        chartContainer.innerHTML = '<div class="no-history">No history yet — submit a recommendation to create local history.</div>';
+        chartContainer.innerHTML = '<div style="color:var(--muted);font-size:12px">No history yet — submit to record.</div>';
         return;
       }
-
-      const w = chartContainer.clientWidth || 760;
-      const h = 140;
-      const padding = { l: 36, r: 12, t: 8, b: 22 };
-      const innerW = Math.max(100, w - padding.l - padding.r);
-      const innerH = Math.max(60, h - padding.t - padding.b);
+      const w = chartContainer.clientWidth || 340;
+      const h = chartContainer.clientHeight || 96;
+      const pad = {l:28, r:8, t:8, b:18};
+      const innerW = Math.max(60, w - pad.l - pad.r);
+      const innerH = Math.max(40, h - pad.t - pad.b);
       const n = history.length;
       const xStep = innerW / Math.max(1, n - 1);
-      function x(i) { return padding.l + i * xStep; }
-      function y(val) { return padding.t + innerH - (val / 10) * innerH; }
+      const x = i => pad.l + i * xStep;
+      const y = v => pad.t + innerH - (v/10)*innerH;
 
-      function buildPath(key) {
-        return history.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(2)} ${y(d[key]).toFixed(2)}`).join(' ');
-      }
-      const moodPath = buildPath('m');
-      const stressPath = buildPath('s');
-      const sleepPath = buildPath('sl');
-
-      const yTicks = [10,5,0];
+      const path = (key) => history.map((d,i) => `${i===0?'M':'L'} ${x(i).toFixed(2)} ${y(d[key]).toFixed(2)}`).join(' ');
+      const pMood = path('m'), pStress = path('s'), pSleep = path('sl');
       const labels = history.map(d => {
-        const dt = new Date(d.t);
-        const hh = dt.getHours().toString().padStart(2,'0');
-        const mm = dt.getMinutes().toString().padStart(2,'0');
-        return `${hh}:${mm}`;
+        const dt = new Date(d.t); return `${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`;
       });
 
       const svg = `
-        <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="History chart">
-          ${yTicks.map(t => `<line x1="${padding.l}" x2="${w - padding.r}" y1="${y(t)}" y2="${y(t)}" stroke="rgba(255,255,255,0.02)" stroke-width="1"/>`).join('')}
-          ${yTicks.map(t => `<text x="${8}" y="${y(t)+4}" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}" font-size="11">${t}</text>`).join('')}
-
-          <path d="${stressPath}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--stress-color')}" stroke-width="2" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 4" />
-          <path d="${sleepPath}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--sleep-color')}" stroke-width="2" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4" />
-          <path d="${moodPath}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" />
-
-          ${history.map((d,i) => `<circle cx="${x(i)}" cy="${y(d.m)}" r="3.6" fill="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" />`).join('')}
-          ${history.map((d,i) => `<rect x="${x(i)-3}" y="${y(d.s)-3}" width="6" height="6" rx="1.6" fill="${getComputedStyle(document.documentElement).getPropertyValue('--stress-color')}" />`).join('')}
-          ${history.map((d,i) => `<circle cx="${x(i)}" cy="${y(d.sl)}" r="2.6" fill="${getComputedStyle(document.documentElement).getPropertyValue('--sleep-color')}" />`).join('')}
-
-          ${labels.map((lab,i) => `<text x="${x(i)}" y="${h - 4}" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}" font-size="11" text-anchor="middle">${lab}</text>`).join('')}
+        <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="history">
+          <path d="${pStress}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--stress-color')}" stroke-width="1.8" stroke-dasharray="5 4"/>
+          <path d="${pSleep}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--sleep-color')}" stroke-width="1.8" stroke-dasharray="2 3"/>
+          <path d="${pMood}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" stroke-width="2.4" />
+          ${history.map((d,i) => `<circle cx="${x(i)}" cy="${y(d.m)}" r="2.6" fill="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" />`).join('')}
         </svg>
       `;
       chartContainer.innerHTML = svg;
     }
 
-    // ---------- RECORD FLOW ----------
-    function createRecord(m, s, sl) { return { m: Number(m), s: Number(s), sl: Number(sl), t: Date.now() }; }
-    function loadHistory() { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; } catch(e){ return []; } }
-    function saveHistory(arr) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-5))); } catch(e){} }
-    function pushRecord(record) { const arr = loadHistory(); arr.push(record); const slice = arr.slice(-5); saveHistory(slice); return slice; }
+    /* ---------- record helpers ---------- */
+    function createRecord(m,s,sl){ return { m:Number(m), s:Number(s), sl:Number(sl), t:Date.now() }; }
+    function pushRecord(rec){ const hist = loadHistory(); hist.push(rec); const slice = hist.slice(-5); saveHistory(slice); return slice; }
 
+    /* ---------- events ---------- */
     go.addEventListener('click', () => {
-      const m = Number(mood.value);
-      const s = Number(stress.value);
-      const sl = Number(sleep.value);
-      const decision = decideRecommendation(m, s, sl);
-      renderRecommendation(decision, { m, s, sl });
-      const newHistory = pushRecord(createRecord(m, s, sl));
-      renderChart(newHistory);
+      const m = Number(mood.value), s = Number(stress.value), sl = Number(sleep.value);
+      const decision = decideRecommendation(m,s,sl);
+      renderRecommendation(decision, {m,s,sl});
+
+      const newHist = pushRecord(createRecord(m,s,sl));
+      renderChart(newHist);
     });
 
     sample.addEventListener('click', () => {
-      const scenarios = [
-        {m:0, s:10, sl:0},
-        {m:2, s:8, sl:3},
-        {m:5, s:4, sl:7},
-        {m:8, s:3, sl:8},
-        {m:6, s:5, sl:6}
-      ];
-      const sidx = scenarios[Math.floor(Math.random()*scenarios.length)];
-      mood.value = sidx.m; stress.value = sidx.s; sleep.value = sidx.sl;
-      updateLabels();
-      const decision = decideRecommendation(sidx.m, sidx.s, sidx.sl);
-      renderRecommendation(decision, { m: sidx.m, s: sidx.s, sl: sidx.sl });
-      const newHistory = pushRecord(createRecord(sidx.m, sidx.s, sidx.sl));
-      renderChart(newHistory);
+      const sampleSet = [{m:0,s:10,sl:0},{m:2,s:8,sl:3},{m:5,s:4,sl:7},{m:8,s:3,sl:8},{m:6,s:5,sl:6}];
+      const pick = sampleSet[Math.floor(Math.random()*sampleSet.length)];
+      mood.value = pick.m; stress.value = pick.s; sleep.value = pick.sl; updateLabels();
+      const decision = decideRecommendation(pick.m,pick.s,pick.sl);
+      renderRecommendation(decision,{m:pick.m,s:pick.s,sl:pick.sl});
+      const newHist = pushRecord(createRecord(pick.m,pick.s,pick.sl)); renderChart(newHist);
     });
 
     reset.addEventListener('click', () => {
       mood.value = 0; stress.value = 0; sleep.value = 0; updateLabels();
-      result.classList.remove('show'); result.innerHTML = ""; result.setAttribute('aria-hidden','true');
+      result.style.display = 'none'; result.innerHTML = '';
       safetyBanner.classList.remove('show'); consentBox.classList.remove('show');
     });
 
     consentCheck.addEventListener('change', () => { consentProceed.disabled = !consentCheck.checked; });
     consentProceed.addEventListener('click', () => {
-      const decision = decideRecommendation(Number(mood.value), Number(stress.value), Number(sleep.value));
+      const decision = decideRecommendation(Number(mood.value),Number(stress.value),Number(sleep.value));
       if (decision.primary === 'immediate_recovery') {
         const optional = SUGGESTIONS.grounding_stress;
         if (!optional) return;
-        const optionalHtml = `
-          <div style="margin-top:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)">
-            <strong style="display:block;margin-bottom:6px;color:var(--muted)">${optional.title} (optional, only if you feel safe)</strong>
-            <div style="color:var(--muted);font-size:13px">${optional.short}</div>
-            <ul style="margin:8px 0 0 18px;color:var(--success)">${optional.steps.map(s => `<li>${s}</li>`).join('')}</ul>
-          </div>
-        `;
-        result.insertAdjacentHTML('beforeend', optionalHtml);
+        const extra = `<div style="margin-top:8px"><strong>${optional.title} (optional)</strong><ul>${optional.steps.map(s=>`<li>${s}</li>`).join('')}</ul></div>`;
+        result.insertAdjacentHTML('beforeend', extra);
         consentBox.classList.remove('show');
       }
     });
-    consentSkip.addEventListener('click', () => { consentBox.classList.remove('show'); });
+    consentSkip.addEventListener('click', ()=>{ consentBox.classList.remove('show'); });
 
-    (function init() {
-      const hist = loadHistory();
+    clearHistory.addEventListener('click', () => { localStorage.removeItem(STORAGE_KEY); renderChart([]); });
+
+    /* ---------- init ---------- */
+    (function init(){
+      // load history
+      const hist = (function(){ try{ const r = localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):[];}catch(e){return [];} })();
       renderChart(hist);
+      // default sliders to 0 (no recommendation shown)
       mood.value = 0; stress.value = 0; sleep.value = 0; updateLabels();
-      result.innerHTML = ""; result.classList.remove('show');
-      safetyBanner.classList.remove('show'); consentBox.classList.remove('show');
+      result.style.display = 'none'; safetyBanner.classList.remove('show'); consentBox.classList.remove('show');
     })();
 
-    [mood, stress, sleep].forEach(s => s.addEventListener('keydown', (e) => { if (e.key === 'Enter') go.click(); }));
-
-    // make chart responsive on window resize
+    // responsive: redraw chart on resize but keep no page scroll
     window.addEventListener('resize', () => {
-      const hist = loadHistory();
+      const hist = (function(){ try{ const r = localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):[]; }catch(e){return [];} })();
       renderChart(hist);
     });
+
+    // keyboard accessibility: Enter triggers recommendation
+    [mood, stress, sleep].forEach(s => s.addEventListener('keydown', e => { if (e.key === 'Enter') go.click(); }));
   </script>
 </body>
 </html>
