@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Mood → Workout Recommender — Nadim Sheikh</title>
-  <meta name="description" content="Mood → Workout Recommender — static demo with local history. Fits single viewport."/>
+  <meta name="description" content="Mood → Workout Recommender — static demo with left-side safety box."/>
   <style>
     :root{
       --bg-1:#041022; --bg-2:#07162a; --muted:#9bb0c3;
@@ -15,41 +15,36 @@
       font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
     }
 
-    /* Prevent page-level scrolling so the browser viewport is static */
+    /* page */
     html,body{height:100%;margin:0;overflow:hidden;background:
       radial-gradient(900px 400px at 8% 8%, rgba(12,40,70,0.12), transparent 8%),
       linear-gradient(180deg,var(--bg-1), var(--bg-2)); color:#eaf8ff;
       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
 
-    /* overall layout fits exactly in viewport */
     .app {
       height:100vh; width:100%; display:flex; align-items:center; justify-content:center;
-      padding:20px;
-      box-sizing:border-box;
+      padding:20px; box-sizing:border-box;
     }
 
-    /* compact centered panel */
+    /* center panel */
     .panel {
-      width:100%; max-width:1000px; height: calc(100vh - 40px);
+      width:100%; max-width:920px; height: calc(100vh - 40px);
       display:grid; grid-template-rows: auto 1fr auto; gap:10px;
-      align-items:start;
+      align-items:start; position:relative; /* allow absolute children placed relative to this */
     }
 
     header { padding:6px 10px; }
     h1{margin:0;font-size:20px}
     p.lead{margin:6px 0 0 0;color:var(--muted);font-size:12px}
 
-    /* main card (scrollable internally if needed) */
     .card {
       background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius: var(--card-radius); padding:12px; box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.03);
+      border-radius: var(--card-radius); padding:14px; box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.03);
       display:flex; flex-direction:column; gap:10px; overflow:auto;
       scroll-behavior:smooth;
     }
 
-    /* Inputs compact */
     .inputs { display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:start; }
-    .single-row { display:flex; align-items:center; gap:12px; }
     label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
     .slider-wrap{background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); padding:8px;border-radius:8px}
     input[type="range"]{width:100%; accent-color: var(--accent-1); height:28px}
@@ -62,7 +57,6 @@
     }
     .btn.secondary { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); font-weight:700; padding:7px 10px; }
 
-    /* result compact style */
     .result {
       border-radius:10px; padding:12px; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
       border-left:4px solid rgba(103,230,255,0.06);
@@ -74,58 +68,74 @@
 
     .meta { margin-top:8px; color:var(--muted); font-size:12px }
 
-    /* chart area compact */
     .history { display:flex; gap:12px; align-items:center; justify-content:space-between; margin-top:6px; }
     .chart { width:340px; height:96px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:transparent; }
     .chart-legend { display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
 
-    /* consent and safety banner */
     .consent { display:none; margin-top:8px; padding:10px; border-radius:8px; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.02); font-size:13px; }
     .consent.show { display:block; }
-    .safety-banner {
-      position: fixed; top:12px; left:50%; transform:translateX(-50%); z-index:9999;
-      width:calc(100% - 40px); max-width:980px; padding:10px 14px; border-radius:10px;
-      background:linear-gradient(90deg,#2f2330,#1b2a30); border:1px solid rgba(255,255,255,0.04); color:#ffece8; font-weight:700; display:none;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.45);
-      font-size:13px;
+
+    /* ******** SAFETY BOX (left of card) ******** */
+    .safety-box {
+      position: absolute;
+      /* place to the left of the card, aligned with card top */
+      left: -220px;   /* negative moves it left outside the card area; tweak if needed */
+      top: 10px;
+      width: 200px;
+      min-height: 200px;
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.03);
+      padding: 12px;
+      box-shadow: 0 14px 36px rgba(2,10,20,0.5);
+      display: none; /* shown only when safety triggers */
+      box-sizing: border-box;
     }
-    .safety-banner.show { display:block; }
+    .safety-box.show { display:block; }
+
+    .safety-box .icon {
+      width:100%; height:100px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;
+    }
+    .safety-box .icon img { max-width:100%; max-height:100%; border-radius:6px; object-fit:cover; opacity:0.95; }
+
+    .safety-box .text {
+      font-size:12px; color:#ffece8; font-weight:700; margin-bottom:8px;
+      background: linear-gradient(90deg,#2f2330,#1b2a30); padding:8px;border-radius:8px;
+    }
+    .safety-box .sub { color:var(--muted); font-weight:600; font-size:12px; margin-top:6px; }
+
+    /* responsive: hide safety box on narrow screens and move to top area instead */
+    @media (max-width:980px) {
+      .safety-box { display:none !important; } /* small screens: hide left box to avoid layout issues */
+    }
 
     footer{color:var(--muted); font-size:12px; padding:6px 10px; text-align:left}
 
-    /* smaller screens: reduce gaps/fonts further */
-    @media (max-height:720px) {
-      .panel { gap:6px; padding-top:52px; }
-      .card { padding:10px; gap:8px; }
-      h1 { font-size:18px }
-      .chart { width:260px; height:80px; }
-      .result { font-size:12px }
-    }
-    @media (max-width:880px){
-      .inputs { grid-template-columns: 1fr; }
-      .chart { width:100%; height:80px; }
-    }
   </style>
 </head>
 <body>
-  <div class="app" aria-hidden="false">
+  <div class="app">
     <div class="panel" role="application" aria-labelledby="appTitle">
-      <!-- hidden local asset; your environment may transform path to URL -->
-      <img id="assetRef" src="/mnt/data/6669e534-386b-4684-bcad-9fb921804696.png" alt="" style="display:none" />
-
-      <!-- safety banner fixed (won't scroll) -->
-      <div id="safetyBanner" class="safety-banner" role="alert" aria-live="assertive"></div>
-
       <!-- header -->
       <header>
         <h1 id="appTitle">Mood → Workout Recommender</h1>
         <p class="lead">Psychology-informed quick recommendations using simple, explainable rules. Static demo — no backend.</p>
       </header>
 
-      <!-- main card (scrolls internally only) -->
+      <!-- Safety box (placed left of card) -->
+      <div id="safetyBox" class="safety-box" aria-hidden="true" role="status" aria-live="polite">
+        <div class="icon">
+          <!-- local image path provided in your environment -->
+          <img src="/mnt/data/272c6218-0bf1-459e-b959-5fcee45b090a.png" alt="safety image" />
+        </div>
+        <div class="text" id="safetyTitle">⚠️ Safety first</div>
+        <div class="sub" id="safetyText">You reported extremely low sleep, very high stress, or very low mood. Prioritize rest and safety — avoid intense exercise now. If at risk, contact emergency services.</div>
+      </div>
+
+      <!-- main card -->
       <section class="card" aria-label="Main controls and results">
         <!-- inputs -->
-        <div class="inputs" aria-hidden="false">
+        <div class="inputs">
           <div>
             <label for="mood">Mood (0 sad — 10 happy): <strong id="moodVal">0</strong></label>
             <div class="slider-wrap"><input id="mood" type="range" min="0" max="10" value="0" aria-label="Mood slider"></div>
@@ -147,10 +157,10 @@
           </div>
         </div>
 
-        <!-- result (initially hidden) -->
-        <div id="result" class="result" aria-live="polite" style="display:none"></div>
+        <!-- result -->
+        <div id="result" class="result" style="display:none"></div>
 
-        <!-- consent (only shows for safety scenarios) -->
+        <!-- consent -->
         <div id="consentBox" class="consent" role="group" aria-label="consent area">
           <label style="display:flex;align-items:center;gap:8px">
             <input id="consentCheck" type="checkbox" />
@@ -162,7 +172,7 @@
           </div>
         </div>
 
-        <!-- compact history & chart row -->
+        <!-- history & chart -->
         <div class="history" aria-label="history and chart">
           <div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Recent submissions (last 5)</div>
@@ -175,16 +185,18 @@
           </div>
         </div>
 
+        <!-- built by below the card content -->
+        <div style="color:var(--muted); font-size:12px; padding-top:6px">
+          Built by <strong>Nadim Sheikh</strong>
+        </div>
       </section>
 
-      <footer>
-        Built by <strong>Nadim Sheikh</strong>
-      </footer>
+      <!-- footer removed from bottom to keep 'Built by' next to card -->
     </div>
   </div>
 
   <script>
-    /* ---------- Constants & suggestions ---------- */
+    // Suggestions (kept small for brevity)
     const SUGGESTIONS = {
       immediate_recovery: {
         title: "🛌 Immediate Recovery — Rest First",
@@ -196,37 +208,29 @@
           "If possible, eat a light snack (banana, yoghurt, toast).",
           "Ask a trusted person for a 20–30 min check-in."
         ],
-        why: ["Severe sleep loss amplifies stress and injury risk.", "Breathing, hydration and short rest reduce physiological arousal."],
         intensity: "Very low"
       },
       grounding_stress: {
         title: "🧘 Grounding + Gentle Movement",
         description: "3–5 min grounding breathing then 5–7 min light walk or standing mobility.",
-        steps: ["3–5 min breathing", "5–7 min gentle walk/standing marches", "2 min progressive relaxation"],
-        why: ["Breathing slows arousal.", "Short movement releases tension without raising arousal."],
+        steps: ["3–5 min breathing","5–7 min gentle walk","2 min progressive relaxation"],
         intensity: "Very low"
       },
       mood_activation: {
         title: "🏃 Short Cardio Burst (Mood Booster)",
         description: "20 minutes moderate cardio. If energy low, target 10–12 min.",
-        steps: ["5 min warm-up", "12–20 min moderate cardio", "3–5 min cool down + breathing"],
-        intensity: "Moderate"
-      },
-      strength_boost: {
-        title: "💪 Strength Session — Full Body",
-        description: "30–40 min resistance session focusing on compound moves.",
-        steps: ["3–5 min warm-up", "3–5 sets compound moves", "5–8 min mobility + breathing"],
+        steps: ["5 min warm-up","12–20 min moderate cardio","3–5 min cool down + breathing"],
         intensity: "Moderate"
       },
       balanced: {
         title: "⚖️ Balanced Session",
-        description: "30-minute: warm-up, focused work, cool-down. Useful as default and for tracking responses.",
-        steps: ["8 min warm-up", "15 min focused work", "7 min cool-down + breathing"],
+        description: "30-minute: warm-up, focused work, cool-down.",
+        steps: ["8 min warm-up","15 min focused work","7 min cool-down + breathing"],
         intensity: "Moderate"
       }
     };
 
-    /* ---------- DOM refs ---------- */
+    // DOM refs
     const mood = document.getElementById('mood');
     const stress = document.getElementById('stress');
     const sleep = document.getElementById('sleep');
@@ -237,7 +241,9 @@
     const sample = document.getElementById('sample');
     const reset = document.getElementById('reset');
     const result = document.getElementById('result');
-    const safetyBanner = document.getElementById('safetyBanner');
+    const safetyBox = document.getElementById('safetyBox');
+    const safetyTitle = document.getElementById('safetyTitle');
+    const safetyText = document.getElementById('safetyText');
     const consentBox = document.getElementById('consentBox');
     const consentCheck = document.getElementById('consentCheck');
     const consentProceed = document.getElementById('consentProceed');
@@ -253,7 +259,7 @@
     [mood, stress, sleep].forEach(el => el.addEventListener('input', updateLabels));
     updateLabels();
 
-    /* ---------- Local history (last 5) ---------- */
+    // Local history (last 5)
     const STORAGE_KEY = 'mwr_history_v1';
     function loadHistory(){ try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }catch(e){return[]} }
     function saveHistory(arr){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-5))); }catch(e){} }
@@ -261,7 +267,7 @@
     function clearHistoryFn(){ localStorage.removeItem(STORAGE_KEY); renderChart([]); }
     clearHistory.addEventListener('click', clearHistoryFn);
 
-    /* ---------- Decision logic (safety-first) ---------- */
+    // Decision logic
     function decideRecommendation(m,s,sl){
       if (sl <= 1 && s >= 9 && m <= 2) return { primary:'immediate_recovery', secondary:null, highRisk:true };
       if (sl <= 2) return { primary:'immediate_recovery', secondary:(s>=8?'grounding_stress':null), highRisk:false };
@@ -269,20 +275,24 @@
       if (s >= 8) return { primary:'grounding_stress', secondary:(m<=4?'mood_activation':null), highRisk:false };
       if (m <= 4) return { primary:'mood_activation', secondary:(sl<=4?'immediate_recovery':null), highRisk:false };
       if (sl <= 4) return { primary:'immediate_recovery', secondary:null, highRisk:false };
-      if (m >= 7 && s <= 4) return { primary:'strength_boost', secondary:null, highRisk:false };
+      if (m >= 7 && s <= 4) return { primary:'balanced', secondary:null, highRisk:false };
       return { primary:'balanced', secondary:null, highRisk:false };
     }
 
-    /* ---------- Render logic ---------- */
+    // Render recommendation and show/hide safety box
     function renderRecommendation(decision, reported){
       const primary = SUGGESTIONS[decision.primary];
       const secondary = decision.secondary ? SUGGESTIONS[decision.secondary] : null;
 
+      // If immediate recovery: show safety box at left
       if (decision.primary === 'immediate_recovery') {
-        safetyBanner.textContent = '⚠️ Safety first: You reported extremely low sleep, very high stress, or very low mood. Prioritize rest and safety — avoid intense exercise now. If at risk, contact emergency services.';
-        safetyBanner.classList.add('show');
+        safetyBox.classList.add('show');
+        safetyBox.setAttribute('aria-hidden','false');
+        // you can adjust title/text if needed
+        safetyTitle.textContent = '⚠️ Safety first';
+        safetyText.textContent = 'You reported extremely low sleep, very high stress, or very low mood. Prioritize rest and safety — avoid intense exercise now. If at risk, contact emergency services.';
 
-        // show primary summary (compact)
+        // show primary summary
         result.style.display = 'block';
         result.innerHTML = `
           <h3>${primary.title}</h3>
@@ -296,8 +306,9 @@
         return;
       }
 
-      // non-safety flow
-      safetyBanner.classList.remove('show');
+      // otherwise hide safety box and render normal result
+      safetyBox.classList.remove('show');
+      safetyBox.setAttribute('aria-hidden','true');
       consentBox.classList.remove('show');
 
       result.style.display = 'block';
@@ -309,7 +320,7 @@
       `;
     }
 
-    /* ---------- Chart rendering (compact SVG) ---------- */
+    // Render chart (compact)
     function renderChart(history){
       chartContainer.innerHTML = '';
       if (!history || !history.length) {
@@ -328,31 +339,24 @@
 
       const path = (key) => history.map((d,i) => `${i===0?'M':'L'} ${x(i).toFixed(2)} ${y(d[key]).toFixed(2)}`).join(' ');
       const pMood = path('m'), pStress = path('s'), pSleep = path('sl');
-      const labels = history.map(d => {
-        const dt = new Date(d.t); return `${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`;
-      });
 
       const svg = `
         <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="history">
           <path d="${pStress}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--stress-color')}" stroke-width="1.8" stroke-dasharray="5 4"/>
           <path d="${pSleep}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--sleep-color')}" stroke-width="1.8" stroke-dasharray="2 3"/>
           <path d="${pMood}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" stroke-width="2.4" />
-          ${history.map((d,i) => `<circle cx="${x(i)}" cy="${y(d.m)}" r="2.6" fill="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" />`).join('')}
         </svg>
       `;
       chartContainer.innerHTML = svg;
     }
 
-    /* ---------- record helpers ---------- */
+    // helpers
     function createRecord(m,s,sl){ return { m:Number(m), s:Number(s), sl:Number(sl), t:Date.now() }; }
-    function pushRecord(rec){ const hist = loadHistory(); hist.push(rec); const slice = hist.slice(-5); saveHistory(slice); return slice; }
 
-    /* ---------- events ---------- */
     go.addEventListener('click', () => {
       const m = Number(mood.value), s = Number(stress.value), sl = Number(sleep.value);
       const decision = decideRecommendation(m,s,sl);
       renderRecommendation(decision, {m,s,sl});
-
       const newHist = pushRecord(createRecord(m,s,sl));
       renderChart(newHist);
     });
@@ -369,7 +373,7 @@
     reset.addEventListener('click', () => {
       mood.value = 0; stress.value = 0; sleep.value = 0; updateLabels();
       result.style.display = 'none'; result.innerHTML = '';
-      safetyBanner.classList.remove('show'); consentBox.classList.remove('show');
+      safetyBox.classList.remove('show'); consentBox.classList.remove('show');
     });
 
     consentCheck.addEventListener('change', () => { consentProceed.disabled = !consentCheck.checked; });
@@ -387,23 +391,26 @@
 
     clearHistory.addEventListener('click', () => { localStorage.removeItem(STORAGE_KEY); renderChart([]); });
 
-    /* ---------- init ---------- */
+    // init
     (function init(){
-      // load history
       const hist = (function(){ try{ const r = localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):[];}catch(e){return [];} })();
       renderChart(hist);
-      // default sliders to 0 (no recommendation shown)
       mood.value = 0; stress.value = 0; sleep.value = 0; updateLabels();
-      result.style.display = 'none'; safetyBanner.classList.remove('show'); consentBox.classList.remove('show');
+      result.style.display = 'none'; safetyBox.classList.remove('show'); consentBox.classList.remove('show');
     })();
 
-    // responsive: redraw chart on resize but keep no page scroll
+    // responsive redraw
     window.addEventListener('resize', () => {
-      const hist = (function(){ try{ const r = localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):[]; }catch(e){return [];} })();
+      const hist = (function(){ try{ const r = localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):[];}catch(e){return [];} })();
       renderChart(hist);
     });
 
-    // keyboard accessibility: Enter triggers recommendation
+    // local storage helper definitions used earlier
+    function loadHistory(){ try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }catch(e){return[]} }
+    function saveHistory(arr){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-5))); }catch(e){} }
+    function pushRecord(rec){ const arr = loadHistory(); arr.push(rec); const slice = arr.slice(-5); saveHistory(slice); return slice; }
+
+    // keyboard accessibility
     [mood, stress, sleep].forEach(s => s.addEventListener('keydown', e => { if (e.key === 'Enter') go.click(); }));
   </script>
 </body>
