@@ -36,27 +36,9 @@
        LAYOUT
        ------------------------- */
     .wrap{width:100%;max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px;align-items:stretch}
-    header{display:flex;gap:16px;align-items:center}
-    .hero{
-      width:72px;height:72px;border-radius:12px;overflow:hidden;flex:0 0 72px;
-      box-shadow: 0 12px 30px rgba(3,18,34,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
-      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      transform: translateY(-4px);
-    }
-    .hero img{width:100%;height:100%;object-fit:cover;display:block}
+    header{display:block;margin-bottom:6px}
     h1{margin:0;font-size:20px;line-height:1.02}
-    p.lead{margin:0;color:var(--muted);font-size:13px}
-
-    .meta{margin-left:auto; display:flex; gap:10px; align-items:center}
-    .badge{
-      background:linear-gradient(90deg,var(--accent-1),var(--accent-2));
-      color:var(--accent-ink); padding:8px 12px; border-radius:999px; font-weight:700; font-size:12px;
-      box-shadow: 0 8px 22px rgba(29,142,154,0.06);
-    }
-    .info{
-      width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-      background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.02); color:var(--muted); cursor:help;
-    }
+    p.lead{margin:6px 0 0 0;color:var(--muted);font-size:13px}
 
     /* -------------------------
        CARD
@@ -107,7 +89,7 @@
     }
 
     /* small helper & footer */
-    footer{display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px}
+    footer{display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px; padding-top:6px}
     .tweet{margin-left:auto;text-decoration:none;color:var(--muted);background:rgba(255,255,255,0.02);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
     .tweet:hover{color:#bdf3ff; transform: translateY(-2px)}
 
@@ -115,34 +97,24 @@
 
     /* small screens */
     @media (max-width:640px){
-      .hero{width:56px;height:56px}
-      .badge{display:none}
       .glow{display:none}
       .row{gap:8px}
       body{padding:24px}
     }
+
+    /* minor header adjustments to center & balance since hero/badge removed */
+    header { padding-left: 2px; }
   </style>
 </head>
 <body>
   <main class="wrap" role="main" aria-labelledby="appTitle">
+    <!-- CLEAN HEADER: no hero image, no badge -->
     <header>
-      <div class="hero" aria-hidden="true">
-        <img src="/mnt/data/874237dd-c1a0-43ec-a58a-2ef2b52c9e83.png" alt="project hero image" />
-      </div>
-
-      <div>
-        <h1 id="appTitle">Mood → Workout Recommender</h1>
-        <p class="lead">Psychology-informed quick recommendations using simple, explainable rules. Static demo — no backend.</p>
-      </div>
-
-      <div class="meta" role="group" aria-label="Project metadata">
-        <div class="badge" title="Project tagline">🧠 • 💪 • Gen-AI Inspired</div>
-        <div class="info" title="About this app" aria-hidden="false">?
-          <!-- tooltip handled by title attribute for simplicity and accessibility -->
-        </div>
-      </div>
+      <h1 id="appTitle">Mood → Workout Recommender</h1>
+      <p class="lead">Psychology-informed quick recommendations using simple, explainable rules. Static demo — no backend.</p>
     </header>
 
+    <!-- MAIN CARD -->
     <section class="card" aria-labelledby="inputsHeading">
       <h2 id="inputsHeading" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Inputs</h2>
 
@@ -186,9 +158,9 @@
       <div class="summary">Psychology note: suggestions aim to regulate affect (mood), reduce physiological arousal (stress) and support recovery (sleep).</div>
     </section>
 
+    <!-- FOOTER: only the required text -->
     <footer>
-      <div>Built by <strong>Nadim Sheikh</strong> — static demo • portfolio-ready</div>
-      <a id="share" class="tweet" target="_blank" rel="noopener noreferrer" aria-label="Share on Twitter">Share ✨</a>
+      <div>Built by <strong>Nadim Sheikh</strong></div>
     </footer>
   </main>
 
@@ -232,7 +204,6 @@
     const sample = document.getElementById('sample');
     const reset = document.getElementById('reset');
     const result = document.getElementById('result');
-    const share = document.getElementById('share');
 
     // keep labels updated
     function updateLabels(){
@@ -262,9 +233,6 @@
           <p>${rec.description}</p>
           <span class="sub">${metaText}</span>
         `;
-        // update share link
-        const txt = encodeURIComponent(`${rec.title} — tried this on Mood→Workout Recommender by Nadim Sheikh. ${rec.description.slice(0,120)}...`);
-        share.href = `https://twitter.com/intent/tweet?text=${txt}`;
         result.classList.add('show');
       }, 90);
     }
@@ -275,7 +243,7 @@
       const s = Number(stress.value);
       const sl = Number(sleep.value);
       const rec = pickRecommendation(m,s,sl);
-      const meta = `You reported mood ${m}, stress ${s}, sleep ${sl * 1}.`;
+      const meta = `You reported mood ${m}, stress ${s}, sleep ${sl}.`;
       showRecommendation(rec, meta);
     });
 
