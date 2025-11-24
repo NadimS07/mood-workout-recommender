@@ -3,89 +3,197 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mood → Workout Recommender</title>
+  <title>Mood → Workout Recommender — Polished UI</title>
   <style>
-    :root{--bg:#0f1720;--card:#0b1220;--muted:#94a3b8;--accent:#7dd3fc}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;min-height:100vh;margin:0;background:linear-gradient(180deg,#071127 0%, #0b1b2b 100%);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:32px}
-    .wrap{width:100%;max-width:720px}
-    header h1{margin:0 0 6px;font-size:20px}
-    p.lead{margin:0 0 18px;color:var(--muted)}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;box-shadow:0 6px 24px rgba(2,6,23,0.6)}
-    .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
-    input[type=range]{width:100%}
-    .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:var(--accent);color:#04201f;border:none;cursor:pointer;font-weight:600}
-    .result{margin-top:16px;padding:14px;border-radius:10px;background:#041425;color:#dff8ff}
-    small.note{display:block;margin-top:8px;color:var(--muted)}
-    footer{margin-top:14px;color:var(--muted);font-size:13px}
-    @media (max-width:520px){header h1{font-size:18px}}
+    :root{
+      --bg-1:#071028;
+      --bg-2:#07172b;
+      --card:#071a2a;
+      --muted:#9fb3c7;
+      --accent:#6fe7ff;
+      --accent-2:#6be5c7;
+      --glass: rgba(255,255,255,0.03);
+      --glass-2: rgba(255,255,255,0.02);
+      --success:#dff8ff;
+      --shadow: 0 10px 30px rgba(2,6,23,0.6);
+      --radius:14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    html,body{height:100%;margin:0;background:
+      radial-gradient(1000px 600px at 10% 10%, rgba(20,40,70,0.18), transparent 8%),
+      linear-gradient(180deg,var(--bg-1), var(--bg-2));
+      color:#e7f7ff; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      display:flex; align-items:center; justify-content:center; padding:40px;}
+
+    .container{
+      width:100%; max-width:720px; margin:auto;
+      transform: translateY(0);
+      transition: transform .45s cubic-bezier(.22,.9,.3,1);
+    }
+
+    header{display:flex; gap:16px; align-items:center; margin-bottom:18px}
+    .hero{
+      width:72px; height:72px; border-radius:12px; overflow:hidden; flex:0 0 72px;
+      box-shadow: 0 8px 28px rgba(3,18,34,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    }
+    .hero img{width:100%;height:100%;object-fit:cover;display:block;}
+
+    h1{font-size:20px;margin:0 0 6px 0;line-height:1.05}
+    .subtitle{color:var(--muted);font-size:13px;margin:0}
+
+    .badge{
+      margin-left:auto; font-size:12px; color: #032f37; background: linear-gradient(90deg,var(--accent),var(--accent-2));
+      padding:8px 10px; border-radius:999px; font-weight:700; box-shadow: 0 6px 20px rgba(7,125,140,0.08);
+      display:inline-flex; gap:8px; align-items:center;
+    }
+
+    .card{
+      background: linear-gradient(180deg,var(--glass), var(--glass-2));
+      border-radius: var(--radius); padding:18px; box-shadow:var(--shadow); border: 1px solid rgba(255,255,255,0.03);
+      backdrop-filter: blur(6px);
+    }
+
+    .form-row{display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin-bottom:12px}
+    .col{flex:1; min-width:200px}
+    label{display:block; font-size:13px; color:var(--muted); margin-bottom:8px}
+    .slider-wrap{background:linear-gradient(180deg, rgba(0,0,0,0.08), rgba(255,255,255,0.01)); padding:10px; border-radius:10px}
+    input[type="range"]{width:100%; accent-color: var(--accent); margin:0}
+
+    .controls{display:flex; gap:10px; align-items:center}
+    .btn{
+      background:linear-gradient(180deg,var(--accent),#3ad6e6); border:none; color:#042026; padding:10px 14px; border-radius:10px; font-weight:700;
+      cursor:pointer; box-shadow: 0 6px 18px rgba(15,113,131,0.14); transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .btn:hover{transform: translateY(-3px); box-shadow:0 18px 30px rgba(15,113,131,0.12)}
+
+    .secondary{background:transparent; color:var(--muted); padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); font-weight:600}
+    .secondary:hover{color:white; transform: translateY(-2px)}
+
+    .result{
+      margin-top:14px; background:linear-gradient(180deg, rgba(2,17,24,0.6), rgba(4,24,34,0.7)); border-radius:12px; padding:14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+      opacity:0; transform:translateY(10px); transition: all .36s cubic-bezier(.2,.9,.25,1);
+      border-left: 4px solid rgba(120,220,255,0.08);
+    }
+    .result.show{opacity:1; transform:translateY(0)}
+    .result h3{margin:0 0 6px 0; font-size:16px}
+    .result p{margin:0;color:var(--success);white-space:pre-wrap}
+
+    .tip{display:block;margin-top:10px;color:var(--muted);font-size:13px}
+
+    footer{margin-top:12px;color:var(--muted);font-size:13px; display:flex; align-items:center; gap:8px}
+    .tweet{
+      margin-left:auto; display:inline-flex; gap:8px; align-items:center; color:var(--muted); text-decoration:none; font-weight:600;
+      background:rgba(255,255,255,0.02); padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.02)
+    }
+    .tweet:hover{color:#aeefff; transform: translateY(-2px)}
+
+    /* glow behind result */
+    .glow{
+      position:relative;
+      margin-top:-22px; pointer-events:none; height:120px; display:block;
+    }
+    .glow:before{
+      content:""; position:absolute; left:50%; transform:translateX(-50%); width:84%; height:120px; border-radius:24px;
+      background: radial-gradient(400px 80px at 50% 10%, rgba(110,231,255,0.06), transparent 30%);
+      filter: blur(18px); z-index:0;
+    }
+
+    /* small responsive tweaks */
+    @media (max-width:580px){ .hero{width:56px;height:56px} .container{padding:10px} .badge{display:none} .form-row{gap:8px} }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="container" role="main" aria-labelledby="title">
     <header>
-      <h1>Mood → Workout Recommender</h1>
-      <p class="lead">Quick, psychology-informed workout suggestion based on how you feel right now. (Static, no backend)</p>
+      <div class="hero" aria-hidden="true">
+        <!-- using your uploaded image path as a decorative hero -->
+        <img src="/mnt/data/8f341f01-41ba-4c31-8ccb-274697513d35.png" alt="project hero image" />
+      </div>
+
+      <div>
+        <h1 id="title">Mood → Workout Recommender</h1>
+        <p class="subtitle">Psychology-informed, quick recommendations — static demo (no backend)</p>
+      </div>
+
+      <div class="badge" aria-hidden="true">🧠 • 💪 • Gen-AI Inspired</div>
     </header>
 
-    <div class="card" id="app">
-      <div class="row">
-        <div style="flex:1;min-width:200px">
-          <label>Mood (0 sad — 10 happy): <strong id="moodVal">6</strong></label>
-          <input id="mood" type="range" min="0" max="10" value="6" />
+    <section class="card" aria-label="Mood input and recommendation">
+      <div class="form-row">
+        <div class="col">
+          <label for="mood">Mood (0 sad — 10 happy): <strong id="moodVal">6</strong></label>
+          <div class="slider-wrap">
+            <input id="mood" type="range" min="0" max="10" value="6" />
+          </div>
         </div>
-        <div style="flex:1;min-width:200px">
-          <label>Stress (0 low — 10 high): <strong id="stressVal">5</strong></label>
-          <input id="stress" type="range" min="0" max="10" value="5" />
+
+        <div class="col">
+          <label for="stress">Stress (0 low — 10 high): <strong id="stressVal">5</strong></label>
+          <div class="slider-wrap">
+            <input id="stress" type="range" min="0" max="10" value="5" />
+          </div>
         </div>
       </div>
 
-      <div class="row">
-        <div style="flex:1;min-width:200px">
-          <label>Sleep last night (hours / 10): <strong id="sleepVal">7</strong></label>
-          <input id="sleep" type="range" min="0" max="10" value="7" />
+      <div class="form-row" style="align-items:center">
+        <div style="flex:1; min-width:220px">
+          <label for="sleep">Sleep last night (hours / 10): <strong id="sleepVal">7</strong></label>
+          <div class="slider-wrap">
+            <input id="sleep" type="range" min="0" max="10" value="7" />
+          </div>
         </div>
-        <div style="display:flex;align-items:flex-end">
-          <button id="go" class="btn">Get Recommendation</button>
+
+        <div class="controls" style="flex:0 0 auto">
+          <button id="go" class="btn" aria-controls="result">Get Recommendation</button>
+          <button id="quick" class="secondary" title="Quick demo sample">Try sample</button>
         </div>
       </div>
 
-      <div id="out" aria-live="polite"></div>
+      <!-- glow + result -->
+      <div class="glow" aria-hidden="true"></div>
 
-      <small class="note">Psychology note: suggestions aim to regulate affect (mood), reduce physiological arousal (stress) and support recovery (sleep).</small>
-    </div>
+      <div id="result" class="result" role="status" aria-live="polite">
+        <!-- populated by JS -->
+      </div>
+
+      <div class="tip">Psychology note: suggestions aim to regulate affect (mood), reduce physiological arousal (stress), and support recovery (sleep).</div>
+    </section>
 
     <footer>
-      <div style="margin-top:10px">Built by Nadim Sheikh</div>
+      <span>Built by Nadim Sheikh — static demo • portfolio-ready</span>
+      <a id="tweet" class="tweet" target="_blank" rel="noopener noreferrer">Share ✨</a>
     </footer>
   </div>
 
   <script>
-    // Pre-generated recommendations (you can edit these texts)
+    // --- content (edit these for clinical tone or personal voice) ---
     const SUGGEST = {
       high_stress: {
-        title: "Restorative Mobility + Breathwork",
-        description: "10–15 min gentle mobility flow + diaphragmatic breathing. Focus on slow, controlled breaths and light joint movements to lower physiological arousal and regain control."
+        title: "🧘 Restorative Mobility + Breathwork",
+        description: "10–15 min gentle mobility flow + diaphragmatic breathing. Slow, controlled breathing reduces sympathetic arousal and supports immediate calming."
       },
       low_mood: {
-        title: "Short Cardio Burst (Mood Booster)",
-        description: "20 minutes moderate cardio (brisk walk, cycling). Rhythmic movement increases endorphins and energy — helpful when mood is low."
+        title: "🏃 Short Cardio Burst (Mood Booster)",
+        description: "20 minutes of moderate cardio (brisk walk, cycling). Rhythmic movement promotes endorphin release and improves positive affect quickly."
       },
       poor_sleep: {
-        title: "Gentle Yoga & Progressive Relaxation",
-        description: "20–25 minutes of gentle yoga stretches, focusing on progressive muscle relaxation to reduce tension and prepare the body for better sleep."
+        title: "🧎 Gentle Yoga & Progressive Relaxation",
+        description: "20–25 minutes of calming stretching and progressive muscle relaxation to lower physiological tension and prime the body for restorative sleep."
       },
       active: {
-        title: "Strength Session — Full Body",
-        description: "30–40 minutes of resistance training (compound lifts or bodyweight). Builds mastery and self-efficacy — great when you feel capable and energized."
+        title: "💪 Strength Session — Full Body",
+        description: "30–40 minutes of resistance training, focusing on compound movements. Builds competence and self-efficacy — energizing when you feel ready."
       },
       default: {
-        title: "Balanced Session",
-        description: "30-minute mix: 8 min warm-up, 15 min focused work (cardio or strength), 7 min cool-down + breathing. Keep intensity consistent and notice your mood after."
+        title: "⚖️ Balanced Session",
+        description: "30-minute mixed session: warm-up (8 min), focused work (15 min), cool-down + breathing (7 min). Monitor intensity and note mood after."
       }
     };
 
-    // UI bindings
+    // --- bindings ---
     const mood = document.getElementById('mood');
     const stress = document.getElementById('stress');
     const sleep = document.getElementById('sleep');
@@ -93,23 +201,43 @@
     const stressVal = document.getElementById('stressVal');
     const sleepVal = document.getElementById('sleepVal');
     const go = document.getElementById('go');
-    const out = document.getElementById('out');
+    const quick = document.getElementById('quick');
+    const result = document.getElementById('result');
+    const tweet = document.getElementById('tweet');
 
-    [mood,stress,sleep].forEach(el => {
-      el.addEventListener('input', e => {
-        moodVal.textContent = mood.value;
-        stressVal.textContent = stress.value;
-        sleepVal.textContent = sleep.value;
-      });
-    });
+    // update labels
+    function updateLabels(){
+      moodVal.textContent = mood.value;
+      stressVal.textContent = stress.value;
+      sleepVal.textContent = sleep.value;
+    }
+    [mood, stress, sleep].forEach(el => el.addEventListener('input', updateLabels));
+    updateLabels();
 
-    function pickRecommendation(moodV, stressV, sleepV) {
-      // Simple psychological heuristics (easy to explain)
-      if (moodV <= 3 || stressV >= 8) return SUGGEST.high_stress;
-      if (moodV <= 5) return SUGGEST.low_mood;
-      if (sleepV <= 4) return SUGGEST.poor_sleep;
-      if (moodV >= 7 && stressV <= 4) return SUGGEST.active;
+    // heuristics
+    function pickRecommendation(m, s, sl) {
+      if (m <= 3 || s >= 8) return SUGGEST.high_stress;
+      if (m <= 5) return SUGGEST.low_mood;
+      if (sl <= 4) return SUGGEST.poor_sleep;
+      if (m >= 7 && s <= 4) return SUGGEST.active;
       return SUGGEST.default;
+    }
+
+    function showRecommendation(rec) {
+      result.classList.remove('show');
+      // small delay for animation smoothness
+      setTimeout(() => {
+        result.innerHTML = `
+          <h3>${rec.title}</h3>
+          <p>${rec.description}</p>
+          <small class="tip">Tip: Track this for 7 days to see meaningful patterns — e.g., cardio vs strength effects on mood.</small>
+        `;
+        requestAnimationFrame(() => result.classList.add('show'));
+      }, 80);
+      // prepare tweet
+      const txt = encodeURIComponent(`Tried "${rec.title}" from Mood→Workout Recommender by Nadim Sheikh — simple & psychology-informed. Try it!`);
+      tweet.href = `https://twitter.com/intent/tweet?text=${txt}`;
+      tweet.setAttribute('aria-label','Share result on Twitter');
     }
 
     go.addEventListener('click', () => {
@@ -117,19 +245,17 @@
       const s = Number(stress.value);
       const sl = Number(sleep.value);
       const rec = pickRecommendation(m,s,sl);
-      out.innerHTML = `
-        <div class="result">
-          <h3 style="margin:0 0 6px">${rec.title}</h3>
-          <div style="white-space:pre-wrap">${rec.description}</div>
-          <small style="display:block;margin-top:8px;color:#032f37">Tip: Track this for 7 days to spot patterns — e.g., cardio improves mood more than you expect.</small>
-        </div>
-      `;
+      showRecommendation(rec);
     });
 
-    // show initial values
-    moodVal.textContent = mood.value;
-    stressVal.textContent = stress.value;
-    sleepVal.textContent = sleep.value;
+    quick.addEventListener('click', () => {
+      // sample scenario to demo UI
+      mood.value = 2; stress.value = 9; sleep.value = 5; updateLabels();
+      showRecommendation(SUGGEST.high_stress);
+    });
+
+    // show default on load
+    showRecommendation(SUGGEST.default);
   </script>
 </body>
 </html>
