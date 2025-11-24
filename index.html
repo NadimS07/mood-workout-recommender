@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mood → Workout Recommender</title>
+  <style>
+    :root{--bg:#0f1720;--card:#0b1220;--muted:#94a3b8;--accent:#7dd3fc}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;min-height:100vh;margin:0;background:linear-gradient(180deg,#071127 0%, #0b1b2b 100%);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:32px}
+    .wrap{width:100%;max-width:720px}
+    header h1{margin:0 0 6px;font-size:20px}
+    p.lead{margin:0 0 18px;color:var(--muted)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;box-shadow:0 6px 24px rgba(2,6,23,0.6)}
+    .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+    input[type=range]{width:100%}
+    .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:var(--accent);color:#04201f;border:none;cursor:pointer;font-weight:600}
+    .result{margin-top:16px;padding:14px;border-radius:10px;background:#041425;color:#dff8ff}
+    small.note{display:block;margin-top:8px;color:var(--muted)}
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    @media (max-width:520px){header h1{font-size:18px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Mood → Workout Recommender</h1>
+      <p class="lead">Quick, psychology-informed workout suggestion based on how you feel right now. (Static, no backend)</p>
+    </header>
+
+    <div class="card" id="app">
+      <div class="row">
+        <div style="flex:1;min-width:200px">
+          <label>Mood (0 sad — 10 happy): <strong id="moodVal">6</strong></label>
+          <input id="mood" type="range" min="0" max="10" value="6" />
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label>Stress (0 low — 10 high): <strong id="stressVal">5</strong></label>
+          <input id="stress" type="range" min="0" max="10" value="5" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;min-width:200px">
+          <label>Sleep last night (hours / 10): <strong id="sleepVal">7</strong></label>
+          <input id="sleep" type="range" min="0" max="10" value="7" />
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button id="go" class="btn">Get Recommendation</button>
+        </div>
+      </div>
+
+      <div id="out" aria-live="polite"></div>
+
+      <small class="note">Psychology note: suggestions aim to regulate affect (mood), reduce physiological arousal (stress) and support recovery (sleep).</small>
+    </div>
+
+    <footer>
+      <div style="margin-top:10px">Built by Nadim Sheikh • static demo — no backend • perfect for portfolio</div>
+    </footer>
+  </div>
+
+  <script>
+    // Pre-generated recommendations (you can edit these texts)
+    const SUGGEST = {
+      high_stress: {
+        title: "Restorative Mobility + Breathwork",
+        description: "10–15 min gentle mobility flow + diaphragmatic breathing. Focus on slow, controlled breaths and light joint movements to lower physiological arousal and regain control."
+      },
+      low_mood: {
+        title: "Short Cardio Burst (Mood Booster)",
+        description: "20 minutes moderate cardio (brisk walk, cycling). Rhythmic movement increases endorphins and energy — helpful when mood is low."
+      },
+      poor_sleep: {
+        title: "Gentle Yoga & Progressive Relaxation",
+        description: "20–25 minutes of gentle yoga stretches, focusing on progressive muscle relaxation to reduce tension and prepare the body for better sleep."
+      },
+      active: {
+        title: "Strength Session — Full Body",
+        description: "30–40 minutes of resistance training (compound lifts or bodyweight). Builds mastery and self-efficacy — great when you feel capable and energized."
+      },
+      default: {
+        title: "Balanced Session",
+        description: "30-minute mix: 8 min warm-up, 15 min focused work (cardio or strength), 7 min cool-down + breathing. Keep intensity consistent and notice your mood after."
+      }
+    };
+
+    // UI bindings
+    const mood = document.getElementById('mood');
+    const stress = document.getElementById('stress');
+    const sleep = document.getElementById('sleep');
+    const moodVal = document.getElementById('moodVal');
+    const stressVal = document.getElementById('stressVal');
+    const sleepVal = document.getElementById('sleepVal');
+    const go = document.getElementById('go');
+    const out = document.getElementById('out');
+
+    [mood,stress,sleep].forEach(el => {
+      el.addEventListener('input', e => {
+        moodVal.textContent = mood.value;
+        stressVal.textContent = stress.value;
+        sleepVal.textContent = sleep.value;
+      });
+    });
+
+    function pickRecommendation(moodV, stressV, sleepV) {
+      // Simple psychological heuristics (easy to explain)
+      if (moodV <= 3 || stressV >= 8) return SUGGEST.high_stress;
+      if (moodV <= 5) return SUGGEST.low_mood;
+      if (sleepV <= 4) return SUGGEST.poor_sleep;
+      if (moodV >= 7 && stressV <= 4) return SUGGEST.active;
+      return SUGGEST.default;
+    }
+
+    go.addEventListener('click', () => {
+      const m = Number(mood.value);
+      const s = Number(stress.value);
+      const sl = Number(sleep.value);
+      const rec = pickRecommendation(m,s,sl);
+      out.innerHTML = `
+        <div class="result">
+          <h3 style="margin:0 0 6px">${rec.title}</h3>
+          <div style="white-space:pre-wrap">${rec.description}</div>
+          <small style="display:block;margin-top:8px;color:#032f37">Tip: Track this for 7 days to spot patterns — e.g., cardio improves mood more than you expect.</small>
+        </div>
+      `;
+    });
+
+    // show initial values
+    moodVal.textContent = mood.value;
+    stressVal.textContent = stress.value;
+    sleepVal.textContent = sleep.value;
+  </script>
+</body>
+</html>
