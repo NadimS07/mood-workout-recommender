@@ -6,22 +6,10 @@
   <title>Mood → Workout Recommender — Nadim Sheikh</title>
   <meta name="description" content="A compact, psychology-informed Mood to Workout recommender. Static demo — no backend.">
   <style>
-    /* -------------------------
-       VARIABLES & BASE
-       ------------------------- */
     :root{
-      --bg-1:#041022;
-      --bg-2:#07162a;
-      --card:#071726;
-      --muted:#9bb0c3;
-      --accent-1:#67e6ff;
-      --accent-2:#3ad6c9;
-      --glass: rgba(255,255,255,0.03);
-      --glass-2: rgba(255,255,255,0.02);
-      --accent-ink:#042026;
-      --success:#e8fbff;
-      --radius:14px;
-      --shadow-lg: 0 18px 40px rgba(2,10,20,0.6);
+      --bg-1:#041022; --bg-2:#07162a; --muted:#9bb0c3;
+      --accent-1:#67e6ff; --accent-2:#3ad6c9; --glass: rgba(255,255,255,0.03);
+      --success:#e8fbff; --radius:14px; --shadow-lg: 0 18px 40px rgba(2,10,20,0.6);
       --shadow-sm: 0 6px 18px rgba(2,6,12,0.45);
       font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
     }
@@ -29,48 +17,41 @@
     html,body{height:100%;margin:0;background:
       radial-gradient(900px 400px at 12% 10%, rgba(12,40,70,0.12), transparent 8%),
       linear-gradient(180deg,var(--bg-1), var(--bg-2));
-      color:#eaf8ff; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-      display:flex; align-items:center; justify-content:center; padding:48px; }
+      color:#eaf8ff; display:flex; align-items:center; justify-content:center; padding:48px; }
 
-    /* -------------------------
-       LAYOUT
-       ------------------------- */
-    .wrap{width:100%;max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px;align-items:stretch}
+    .wrap{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
     header{display:block;margin-bottom:6px}
-    h1{margin:0;font-size:20px;line-height:1.02}
-    p.lead{margin:6px 0 0 0;color:var(--muted);font-size:13px}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:8px 0 0 0;color:var(--muted);font-size:13px}
 
-    /* -------------------------
-       CARD
-       ------------------------- */
     .card{
-      background: linear-gradient(180deg,var(--glass), var(--glass-2));
-      border-radius: var(--radius); padding:18px; box-shadow:var(--shadow-lg); border:1px solid rgba(255,255,255,0.03);
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+      border-radius:var(--radius); padding:18px; box-shadow:var(--shadow-lg); border:1px solid rgba(255,255,255,0.03);
       backdrop-filter: blur(8px);
-      transition: transform .42s cubic-bezier(.22,.9,.3,1);
     }
-    .card:hover{ transform: translateY(-4px) }
 
     .row{display:flex;gap:12px;flex-wrap:wrap}
     .col{flex:1;min-width:200px}
     label{display:block;color:var(--muted);font-size:13px;margin-bottom:8px}
-    .slider-wrap{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));padding:10px;border-radius:10px}
-    input[type="range"]{width:100%;accent-color: var(--accent-1)}
+    .slider-wrap{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); padding:10px;border-radius:10px}
+    input[type="range"]{width:100%; accent-color: var(--accent-1)}
 
     .controls{display:flex; gap:10px; align-items:center}
     .btn{
-      background:linear-gradient(180deg,var(--accent-1), #39d7e3); border:none; color:var(--accent-ink); padding:10px 14px; border-radius:10px; font-weight:800;
-      cursor:pointer; box-shadow:var(--shadow-sm); transition: transform .16s ease, box-shadow .16s ease;
+      background:linear-gradient(180deg,var(--accent-1), #39d7e3); border:none; color:#042026; padding:10px 14px; border-radius:10px; font-weight:800;
+      cursor:pointer; box-shadow:var(--shadow-sm);
     }
-    .btn:hover{ transform: translateY(-3px); box-shadow: 0 20px 40px rgba(15,113,131,0.12) }
     .btn.secondary{ background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); font-weight:700 }
-    .btn.secondary:hover{ color:#e6fbff; transform: translateY(-2px) }
+    .btn:focus{ outline:2px solid rgba(103,230,255,0.12) }
 
-    /* -------------------------
-       RESULT CARD
-       ------------------------- */
-    .result{
-      margin-top:14px; padding:14px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+    .glow{position:relative;margin-top:-28px;height:120px;pointer-events:none}
+    .glow:before{
+      content:""; position:absolute; left:50%; transform:translateX(-50%); width:84%; height:140px; border-radius:28px;
+      background: radial-gradient(450px 120px at 50% 10%, rgba(103,230,255,0.06), transparent 30%);
+      filter: blur(22px); z-index:0;
+    }
+
+    .result{ margin-top:14px; padding:14px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
       border-left:4px solid rgba(103,230,255,0.06); opacity:0; transform:translateY(12px); transition: all .36s cubic-bezier(.2,.9,.25,1);
     }
     .result.show{opacity:1; transform:translateY(0)}
@@ -79,143 +60,143 @@
     .result .sub{display:block;margin-top:10px;color:var(--muted);font-size:13px}
     .meta-list{margin-top:10px;color:var(--muted);font-size:13px}
 
-    .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-    .micro { background: rgba(255,255,255,0.02); padding:8px 10px; border-radius:8px; color:var(--muted); border:1px solid rgba(255,255,255,0.02); font-weight:700; font-size:13px }
-
-    /* glow behind card */
-    .glow{
-      position:relative;margin-top:-28px;height:120px;pointer-events:none;
+    /* Safety banner */
+    .safety-banner{
+      display:none; margin-bottom:10px; padding:12px; border-radius:10px; background:linear-gradient(90deg,#2f2330,#1b2a30);
+      border:1px solid rgba(255,255,255,0.03); color:#ffece8; font-weight:700;
     }
-    .glow:before{
-      content:""; position:absolute; left:50%; transform:translateX(-50%); width:84%; height:140px; border-radius:28px;
-      background: radial-gradient(450px 120px at 50% 10%, rgba(103,230,255,0.06), transparent 30%);
-      filter: blur(22px); z-index:0;
+    .safety-banner.show{display:block}
+
+    .consent {
+      display:none; margin-top:10px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.02);
     }
+    .consent.show{display:block}
 
-    /* small helper & footer */
-    footer{display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px; padding-top:6px}
-    .summary{margin-top:12px;color:var(--muted);font-size:13px}
+    footer{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;padding-top:6px}
 
-    /* small screens */
-    @media (max-width:640px){
-      .glow{display:none}
-      .row{gap:8px}
-      body{padding:24px}
-    }
-
-    /* minor header adjustments to center & balance since hero/badge removed */
-    header { padding-left: 2px; }
+    @media (max-width:640px){ body{padding:24px} .glow{display:none} }
   </style>
 </head>
 <body>
   <main class="wrap" role="main" aria-labelledby="appTitle">
-    <!-- CLEAN HEADER: no hero image, no badge -->
+    <!-- Hidden asset reference (environment can convert local path to URL) -->
+    <img id="asset-ref" src="/mnt/data/fd0f65fa-cfd1-4309-8000-4a53a79bf909.png" alt="" style="display:none" />
+
     <header>
       <h1 id="appTitle">Mood → Workout Recommender</h1>
       <p class="lead">Psychology-informed quick recommendations using simple, explainable rules. Static demo — no backend.</p>
     </header>
 
-    <!-- MAIN CARD -->
+    <!-- Safety banner (shown only for severe states) -->
+    <div id="safetyBanner" class="safety-banner" role="alert" aria-live="assertive">
+      ⚠️ <strong>Safety first:</strong> You reported extremely low sleep, very high stress, and very low mood. The immediate priority is safety and rest — do not start intense exercise right now. If you are in danger or thinking about harming yourself, contact emergency services immediately.
+    </div>
+
     <section class="card" aria-labelledby="inputsHeading">
-      <h2 id="inputsHeading" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Inputs</h2>
+      <h2 id="inputsHeading" style="position:absolute;left:-9999px;">Inputs</h2>
 
       <div class="row">
         <div class="col">
           <label for="mood">Mood (0 sad — 10 happy): <strong id="moodVal">6</strong></label>
-          <div class="slider-wrap">
-            <input id="mood" type="range" min="0" max="10" value="6" aria-label="Mood slider">
-          </div>
+          <div class="slider-wrap"><input id="mood" type="range" min="0" max="10" value="6" aria-label="Mood slider"></div>
         </div>
 
         <div class="col">
           <label for="stress">Stress (0 low — 10 high): <strong id="stressVal">5</strong></label>
-          <div class="slider-wrap">
-            <input id="stress" type="range" min="0" max="10" value="5" aria-label="Stress slider">
-          </div>
+          <div class="slider-wrap"><input id="stress" type="range" min="0" max="10" value="5" aria-label="Stress slider"></div>
         </div>
       </div>
 
       <div class="row" style="align-items:center;margin-top:10px">
         <div style="flex:1;min-width:220px">
           <label for="sleep">Sleep last night (hours / 10): <strong id="sleepVal">7</strong></label>
-          <div class="slider-wrap">
-            <input id="sleep" type="range" min="0" max="10" value="7" aria-label="Sleep slider">
-          </div>
+          <div class="slider-wrap"><input id="sleep" type="range" min="0" max="10" value="7" aria-label="Sleep slider"></div>
         </div>
 
         <div style="display:flex;gap:10px;align-items:center">
           <button id="go" class="btn" aria-controls="result">Get Recommendation</button>
           <button id="sample" class="btn secondary" title="Try sample scenarios">Try sample</button>
-          <button id="reset" class="btn secondary" title="Reset sliders to defaults">Reset</button>
+          <button id="reset" class="btn secondary" title="Reset sliders">Reset</button>
         </div>
       </div>
 
       <div class="glow" aria-hidden="true"></div>
 
       <section id="result" class="result" role="status" aria-live="polite">
-        <!-- populated by JS -->
+        <!-- JS will populate -->
       </section>
 
-      <div class="summary">Psychology note: suggestions aim to regulate affect (mood), reduce physiological arousal (stress) and support recovery (sleep).</div>
+      <!-- Consent area: shown only for high-risk states before showing any movement suggestions -->
+      <div id="consentBox" class="consent" role="group" aria-label="Consent for low-arousal movement suggestions">
+        <label style="display:flex;align-items:center;gap:8px">
+          <input id="consentCheck" type="checkbox" />
+          <span style="color:var(--muted)">I understand this is a safety-first recovery plan. I give consent to see optional gentle movement suggestions (only if I feel safe).</span>
+        </label>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button id="consentProceed" class="btn" disabled>Show suggestions</button>
+          <button id="consentSkip" class="btn secondary">Skip suggestions</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;color:var(--muted);font-size:13px">Psychology note: suggestions prioritize safety, affect regulation, and recovery. If you feel at risk, contact emergency services or a trusted person.</div>
     </section>
 
-    <!-- FOOTER: only the required text -->
     <footer>
       <div>Built by <strong>Nadim Sheikh</strong></div>
     </footer>
   </main>
 
   <script>
-    /* -------------------------
-       CONTENT: richer suggestions with exercises + quick options
-       ------------------------- */
+    // Rich suggestions mapping (includes immediate_recovery)
     const SUGGESTIONS = {
-      sleep_recovery: {
-        title: "🛌 Sleep Recovery + Low-Arousal Recovery",
-        short: "Prioritize rest and low-arousal recovery before high-intensity exercise.",
-        description: `When sleep is extremely low, the nervous system is fragile. Focus on restorative breathing, very light mobility, and rest. Avoid heavy resistance or long cardio until you get restorative sleep.`,
-        quick: "10-min: 6–8 min guided breathing + 2–4 min gentle mobility (neck/shoulder/hip circles).",
+      immediate_recovery: {
+        title: "🛌 Immediate Recovery & Safety Plan — Rest First",
+        short: "Prioritize safety, rest, and very low-arousal recovery. No intense exercise.",
+        description: "You reported almost no sleep, very high stress, and very low mood. Stabilize first: breathe, hydrate, eat a light snack, rest. Avoid intense exercise until you've had restorative sleep.",
+        quick: "0–15 min: breathing (3–6 min) + water + light snack + rest; 15–90 min: short nap or guided relaxation.",
         steps: [
-          "2–3 min diaphragmatic breathing (4s in, 6s out)",
-          "5–8 min gentle mobility: cat-cow, hip circles, shoulder rolls",
-          "Optional: 10–20 min light walk if you feel alert enough"
+          "Sit or lie down in a safe, comfortable place.",
+          "3–6 minutes diaphragmatic breathing (4s inhale — 6s exhale).",
+          "Drink ~200–300 ml water slowly.",
+          "If possible, eat a light snack (banana, yoghurt, or toast).",
+          "Ask a trusted person for a 20–30 min check-in."
         ],
         why: [
-          "Sleep deprivation amplifies stress and injury risk.",
-          "Low-arousal recovery reduces sympathetic activation and supports cognitive recovery."
+          "Severe sleep loss amplifies stress response and increases injury risk.",
+          "Breathing, hydration, and short rest reduce physiological arousal and support safety."
         ],
-        intensity: "Low"
+        intensity: "Very low"
       },
 
       grounding_stress: {
         title: "🧘 Grounding + Short Low-Intensity Movement",
-        short: "Immediate grounding + short, low-intensity movement to reduce acute stress.",
-        description: `Start with 3–5 minutes of grounding breathing, then a short gentle routine (mobility/walk). This reduces physiological arousal and gives instant affect regulation.`,
-        quick: "10-min: 3 min box/belly breathing + 7 min brisk walk or mobility flow.",
+        short: "Grounding breathing followed by gentle movement to reduce acute stress.",
+        description: "Start with 3–5 minutes of grounding breathing, then a gentle routine (mobility/walk). This reduces physiological arousal and gives immediate affect regulation.",
+        quick: "10-min: 3 min breathing + 7 min gentle walk or mobility.",
         steps: [
-          "3–5 min box (4-4-4-4) or 4-6 diaphragmatic breaths",
-          "5–7 min brisk walking or alternating standing marches",
-          "2 min progressive muscle relaxation (tension/release)"
+          "3–5 min box/belly breathing (4-4-4-4 or 4-6 diaphragmatic breaths).",
+          "5–7 min standing marches or light walk.",
+          "2 min progressive muscle relaxation (tension/release)."
         ],
         why: [
-          "Breathing slows heart rate and reduces the stress response.",
+          "Breathing reduces sympathetic activation.",
           "Short movement releases tension without raising arousal too much."
         ],
         intensity: "Very low — Low"
       },
 
       mood_activation: {
-        title: "🏃 Behavioral Activation — Short Cardio Burst",
-        short: "Short, focused cardio to raise mood and energy.",
-        description: `Use a 20-minute moderate cardio session to trigger endorphin release and increase positive affect. If energy is low, reduce duration to 10–12 minutes.`,
-        quick: "10-min: 5 min warm-up + 7–8 min moderate steady-state cardio.",
+        title: "🏃 Short Cardio Burst (Mood Booster)",
+        short: "Moderate cardio to raise mood and energy.",
+        description: "20 minutes of moderate cardio (brisk walk or cycling). If energy is very low, aim for 10–12 minutes.",
+        quick: "10-min: 5 min warm-up + 7–8 min steady cardio.",
         steps: [
-          "5 min warm-up (dynamic movements)",
-          "12–20 min moderate cardio (brisk walk/jog/cycle)",
-          "3–5 min cool down + breathing"
+          "5 min warm-up (dynamic moves).",
+          "12–20 min moderate cardio.",
+          "3–5 min cool down + breathing."
         ],
         why: [
-          "Rhythmic cardio has a robust mood-lifting effect.",
+          "Rhythmic cardio has mood-lifting effects.",
           "Short sessions reduce activation barriers and build momentum."
         ],
         intensity: "Moderate"
@@ -224,12 +205,12 @@
       strength_boost: {
         title: "💪 Strength Session — Full Body",
         short: "Resistance training for competence and self-efficacy.",
-        description: `A 30–40 minute full-body resistance session focusing on compound movements (squats, push, hinge). Good for days with higher mood and low stress.`,
-        quick: "10-min: 2–3 rounds of a mini-circuit (bodyweight squats, push-ups, plank).",
+        description: "30–40 minutes of resistance training focusing on compound moves. Good on days with higher mood and low stress.",
+        quick: "10-min: 2–3 rounds bodyweight circuit (squats, push-ups, plank).",
         steps: [
-          "3–5 min warm-up",
-          "3–5 sets of compound moves (squat, row/pull, hinge)",
-          "5–8 min mobility + breathing"
+          "3–5 min warm-up.",
+          "3–5 sets compound moves (squat, row/pull, hinge).",
+          "5–8 min mobility + breathing."
         ],
         why: [
           "Strength training improves perceived control and long-term mood.",
@@ -241,24 +222,22 @@
       balanced: {
         title: "⚖️ Balanced Session",
         short: "A safe mixed session when no single factor dominates.",
-        description: `A 30-minute balanced routine mixing warm-up, moderate work, and cool-down. Useful as a daily default and for tracking responses.`,
+        description: "30-minute balanced routine: warm-up, focused work, cool-down. Useful as a daily default and for tracking responses.",
         quick: "10-min: 3 min warm-up, 5 min focused work, 2 min cool-down.",
         steps: [
-          "8 min warm-up (mobility + light cardio)",
-          "15 min focused work (cardio or strength)",
-          "7 min cool-down + breathing"
+          "8 min warm-up (mobility + light cardio).",
+          "15 min focused work (cardio or strength).",
+          "7 min cool-down + breathing."
         ],
         why: [
-          "Balanced sessions allow experimenting with what helps your mood most.",
+          "Balanced sessions allow experimentation with what helps mood most.",
           "Tracking helps identify patterns across days."
         ],
         intensity: "Moderate"
       }
     };
 
-    /* -------------------------
-       BINDINGS
-       ------------------------- */
+    // DOM bindings
     const mood = document.getElementById('mood');
     const stress = document.getElementById('stress');
     const sleep = document.getElementById('sleep');
@@ -269,6 +248,11 @@
     const sample = document.getElementById('sample');
     const reset = document.getElementById('reset');
     const result = document.getElementById('result');
+    const safetyBanner = document.getElementById('safetyBanner');
+    const consentBox = document.getElementById('consentBox');
+    const consentCheck = document.getElementById('consentCheck');
+    const consentProceed = document.getElementById('consentProceed');
+    const consentSkip = document.getElementById('consentSkip');
 
     function updateLabels(){
       moodVal.textContent = mood.value;
@@ -278,96 +262,74 @@
     [mood, stress, sleep].forEach(el => el.addEventListener('input', updateLabels));
     updateLabels();
 
-    /* -------------------------
-       CORE DECISION: improved, priority-aware
-       ------------------------- */
+    // decision: safety-first rule at top
     function decideRecommendation(m, s, sl) {
-      // m: mood 0-10 (0 sad)
-      // s: stress 0-10 (10 high)
-      // sl: sleep 0-10 (hours /10) so sl=0 means 0 hours
-
-      // Priority rules:
-      // 1) If very low sleep (<=2) => sleep recovery first
-      // 2) If extreme stress (>=9) AND low mood (<=3) => combined grounding + brief activation
-      // 3) If extreme stress (>=8) => grounding_stress
-      // 4) If very low mood (<=4) => mood_activation
-      // 5) If low sleep (<=4) => sleep_recovery (less urgent than <=2)
-      // 6) If high mood & low stress => strength_boost
-      // 7) default => balanced
-
-      // We'll also detect when multiple signals present and add a secondary suggestion.
-
-      const primaryCandidates = [];
-      const secondary = [];
-
-      if (sl <= 2) {
-        primaryCandidates.push('sleep_recovery');
-        // If stress is extremely high too, suggest grounding as secondary
-        if (s >= 8) secondary.push('grounding_stress');
-        return { primary: primaryCandidates[0], secondary: secondary[0] || null };
+      // Highest-priority safety rule
+      if (sl <= 1 && s >= 9 && m <= 2) {
+        return { primary: 'immediate_recovery', secondary: null, highRisk: true };
       }
 
-      if (s >= 9 && m <= 3) {
-        primaryCandidates.push('grounding_stress');
-        secondary.push('mood_activation'); // short activation after grounding
-        return { primary: primaryCandidates[0], secondary: secondary[0] };
-      }
-
-      if (s >= 8) {
-        primaryCandidates.push('grounding_stress');
-        if (m <= 4) secondary.push('mood_activation');
-        return { primary: primaryCandidates[0], secondary: secondary[0] || null };
-      }
-
-      if (m <= 4) {
-        primaryCandidates.push('mood_activation');
-        if (sl <= 4) secondary.push('sleep_recovery');
-        return { primary: primaryCandidates[0], secondary: secondary[0] || null };
-      }
-
-      if (sl <= 4) {
-        primaryCandidates.push('sleep_recovery');
-        return { primary: primaryCandidates[0], secondary: null };
-      }
-
-      if (m >= 7 && s <= 4) {
-        primaryCandidates.push('strength_boost');
-        return { primary: primaryCandidates[0], secondary: null };
-      }
-
-      // fallback
-      return { primary: 'balanced', secondary: null };
+      // other rules
+      if (sl <= 2) return { primary: 'immediate_recovery', secondary: (s >= 8 ? 'grounding_stress' : null), highRisk: false };
+      if (s >= 9 && m <= 3) return { primary: 'grounding_stress', secondary: 'mood_activation', highRisk: false };
+      if (s >= 8) return { primary: 'grounding_stress', secondary: (m <= 4 ? 'mood_activation' : null), highRisk: false };
+      if (m <= 4) return { primary: 'mood_activation', secondary: (sl <= 4 ? 'immediate_recovery' : null), highRisk: false };
+      if (sl <= 4) return { primary: 'immediate_recovery', secondary: null, highRisk: false };
+      if (m >= 7 && s <= 4) return { primary: 'strength_boost', secondary: null, highRisk: false };
+      return { primary: 'balanced', secondary: null, highRisk: false };
     }
 
-    /* -------------------------
-       RENDERING: friendly, actionable, and explainable
-       ------------------------- */
-    function renderRecommendation(primaryKey, secondaryKey, reported) {
-      const primary = SUGGESTIONS[primaryKey];
-      const secondary = secondaryKey ? SUGGESTIONS[secondaryKey] : null;
+    // Render recommendation; when highRisk true show safety banner + consent box
+    function renderRecommendation(decision, reported) {
+      const primary = SUGGESTIONS[decision.primary];
+      const secondary = decision.secondary ? SUGGESTIONS[decision.secondary] : null;
 
-      // build "Why this" bullets
-      const whyBullets = [];
-      primary.why.forEach(w => whyBullets.push(w));
-      if (secondary) {
-        whyBullets.push(`Also suggested: ${secondary.title} — helps address ${secondary.short.toLowerCase()}.`);
+      // if immediate_recovery, show banner and consent area
+      if (decision.primary === 'immediate_recovery') {
+        safetyBanner.classList.add('show');
+        // render primary summary but hide optional movement steps until consent
+        result.classList.remove('show');
+        setTimeout(() => {
+          result.innerHTML = `
+            <h3>${primary.title}</h3>
+            <p>${primary.description}</p>
+            <div style="margin-top:8px;color:var(--muted);font-size:13px">
+              <strong>Immediate steps (0–15 min):</strong>
+              <ul style="margin:6px 0 0 18px;color:var(--success);font-size:14px">
+                ${primary.steps.map(s => `<li>${s}</li>`).join('')}
+              </ul>
+            </div>
+            <div class="meta-list">
+              <strong>Why this?</strong>
+              <ul style="margin:6px 0 0 18px;color:var(--muted);font-size:13px">
+                ${primary.why.map(w => `<li>${w}</li>`).join('')}
+              </ul>
+            </div>
+            <div class="sub" style="margin-top:10px">You reported mood ${reported.m}, stress ${reported.s}, sleep ${reported.sl}. Intensity: Very low.</div>
+          `;
+          result.classList.add('show');
+        }, 80);
+
+        // show consent area for optional gentle movement content
+        consentBox.classList.add('show');
+        consentCheck.checked = false;
+        consentProceed.disabled = true;
+        return;
       }
 
-      // intensity hint
-      const intensity = primary.intensity || (primaryKey === 'balanced' ? 'Moderate' : 'Low');
+      // Not immediate_recovery: hide safety UI
+      safetyBanner.classList.remove('show');
+      consentBox.classList.remove('show');
 
-      // Build actionable markup
+      const whyBullets = primary.why.concat(secondary ? [`Also suggested: ${secondary.title} — ${secondary.short}`] : []);
+      const intensity = primary.intensity || 'Moderate';
       let stepsHtml = '';
       if (primary.steps && primary.steps.length) {
         stepsHtml = '<ul style="margin:8px 0 0 18px;color:var(--success)">';
         primary.steps.forEach(s => stepsHtml += `<li>${s}</li>`);
         stepsHtml += '</ul>';
       }
-
-      // Quick 10-min option
       const quick = primary.quick ? `<div style="margin-top:10px"><strong>If 10 minutes:</strong> ${primary.quick}</div>` : '';
-
-      // Secondary suggestion box
       const secondaryHtml = secondary ? `
         <div style="margin-top:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)">
           <strong style="display:block;margin-bottom:6px;color:var(--muted)">${secondary.title}</strong>
@@ -375,10 +337,6 @@
         </div>
       ` : '';
 
-      // meta
-      const metaText = `You reported mood ${reported.m}, stress ${reported.s}, sleep ${reported.sl}. Suggested intensity: ${intensity}.`;
-
-      // Render
       result.classList.remove('show');
       setTimeout(() => {
         result.innerHTML = `
@@ -393,49 +351,78 @@
               ${whyBullets.map(b => `<li>${b}</li>`).join('')}
             </ul>
           </div>
-          <div class="sub" style="margin-top:10px">${metaText}</div>
+          <div class="sub" style="margin-top:10px">You reported mood ${reported.m}, stress ${reported.s}, sleep ${reported.sl}. Suggested intensity: ${intensity}.</div>
         `;
         result.classList.add('show');
       }, 80);
     }
 
-    /* -------------------------
-       EVENTS
-       ------------------------- */
+    // Event listeners
     go.addEventListener('click', () => {
       const m = Number(mood.value);
       const s = Number(stress.value);
       const sl = Number(sleep.value);
-
       const decision = decideRecommendation(m, s, sl);
-      renderRecommendation(decision.primary, decision.secondary, { m, s, sl });
+      renderRecommendation(decision, { m, s, sl });
     });
 
     sample.addEventListener('click', () => {
       const scenarios = [
-        {m:1,s:10,sl:0},   // very stressed + no sleep
-        {m:3,s:8,sl:6},    // low mood + high stress
-        {m:2,s:4,sl:2},    // low mood + poor sleep
-        {m:8,s:2,sl:8},    // active day
+        {m:0, s:10, sl:0}, // very severe
+        {m:1, s:9, sl:1},
+        {m:3, s:8, sl:6},
+        {m:8, s:2, sl:8}
       ];
-      const s = scenarios[Math.floor(Math.random()*scenarios.length)];
-      mood.value = s.m; stress.value = s.s; sleep.value = s.sl;
+      const sidx = scenarios[Math.floor(Math.random()*scenarios.length)];
+      mood.value = sidx.m; stress.value = sidx.s; sleep.value = sidx.sl;
       updateLabels();
-      const decision = decideRecommendation(s.m, s.s, s.sl);
-      renderRecommendation(decision.primary, decision.secondary, { m: s.m, s: s.s, sl: s.sl });
+      const decision = decideRecommendation(sidx.m, sidx.s, sidx.sl);
+      renderRecommendation(decision, { m: sidx.m, s: sidx.s, sl: sidx.sl });
     });
 
     reset.addEventListener('click', () => {
       mood.value = 6; stress.value = 5; sleep.value = 7; updateLabels();
-      const dec = decideRecommendation(6,5,7);
-      renderRecommendation(dec.primary, dec.secondary, { m:6, s:5, sl:7 });
+      const decision = decideRecommendation(6,5,7);
+      renderRecommendation(decision, { m:6, s:5, sl:7 });
+    });
+
+    // Consent interactions
+    consentCheck.addEventListener('change', () => {
+      consentProceed.disabled = !consentCheck.checked;
+    });
+    consentProceed.addEventListener('click', () => {
+      // reveal gentle movement suggestions (if any) appended under result
+      // We'll append grounding_stress content (if exists) as optional movements
+      const decision = decideRecommendation(Number(mood.value), Number(stress.value), Number(sleep.value));
+      // Only append optional gentle movement for safety scenarios
+      if (decision.primary === 'immediate_recovery') {
+        const optional = SUGGESTIONS.grounding_stress;
+        if (!optional) return;
+        const optionalHtml = `
+          <div style="margin-top:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)">
+            <strong style="display:block;margin-bottom:6px;color:var(--muted)">${optional.title} (optional, only if you feel safe)</strong>
+            <div style="color:var(--muted);font-size:13px">${optional.short}</div>
+            <ul style="margin:8px 0 0 18px;color:var(--success)">${optional.steps.map(s => `<li>${s}</li>`).join('')}</ul>
+          </div>
+        `;
+        // Append to result
+        result.insertAdjacentHTML('beforeend', optionalHtml);
+        // Hide consent box once used
+        consentBox.classList.remove('show');
+        safetyBanner.classList.add('show');
+      }
+    });
+
+    consentSkip.addEventListener('click', () => {
+      consentBox.classList.remove('show');
+      // keep safety banner visible but do not append movements
     });
 
     // show default on load
     const initial = decideRecommendation(6,5,7);
-    renderRecommendation(initial.primary, initial.secondary, { m:6, s:5, sl:7 });
+    renderRecommendation(initial, { m:6, s:5, sl:7 });
 
-    // accessibility: Enter on sliders triggers get recommendation
+    // keyboard accessibility: Enter triggers Get Recommendation
     [mood, stress, sleep].forEach(s => s.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') go.click();
     }));
