@@ -14,17 +14,19 @@
       font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
     }
 
-    /* ====== AI-esque animated background (inserted; uses pseudo-elements only) ====== */
+    /* ==== Stronger AI Background Overrides (Option A) ==== */
     :root{
-      --ai-bg-accent-1: rgba(30,150,200,0.10);
-      --ai-bg-accent-2: rgba(120,60,200,0.07);
-      --ai-orb-1: rgba(103,230,255,0.10);
-      --ai-orb-2: rgba(58,214,201,0.08);
-      --ai-orb-3: rgba(155,230,125,0.06);
-      --ai-noise-opacity: 0.04;
+      --ai-bg-accent-1: rgba(30,150,200,0.16);
+      --ai-bg-accent-2: rgba(120,60,200,0.12);
+
+      --ai-orb-1: rgba(103,230,255,0.16);
+      --ai-orb-2: rgba(58,214,201,0.14);
+      --ai-orb-3: rgba(155,230,125,0.12);
+
+      --ai-noise-opacity: 0.06;
     }
 
-    /* Layer 1: slow animated radial gradient wash */
+    /* ====== AI-esque animated background (uses pseudo-elements only) ====== */
     html::before{
       content: "";
       position: fixed;
@@ -47,7 +49,6 @@
       100% { transform: translate3d(0,0,0) scale(1); }
     }
 
-    /* Layer 2: floating orbs */
     html::after{
       content: "";
       position: fixed;
@@ -76,7 +77,6 @@
       100% { transform: translateY(0) rotate(0deg) scale(1); opacity:0.95; }
     }
 
-    /* Layer 3: subtle moving noise texture */
     html > body::before{
       content:"";
       position:fixed;
@@ -96,7 +96,6 @@
       100%{ transform: translate3d(0,0,0); }
     }
 
-    /* Accent highlight near the central panel (subtle vignette) */
     .panel::before{
       content: "";
       position: absolute;
@@ -112,7 +111,6 @@
       filter: blur(18px);
     }
 
-    /* Small animated particle cluster */
     .panel::after{
       content: "";
       position: absolute;
@@ -138,15 +136,12 @@
       100%{ transform: translateY(0) scale(1); opacity:0.95; }
     }
 
-    /* Respect prefer-reduced-motion */
     @media (prefers-reduced-motion: reduce){
       html::before, html::after, html > body::before, .panel::before, .panel::after { animation: none !important; transition: none !important; transform: none !important; }
     }
 
-    /* z-index hygiene: ensure background layers are behind the content */
     html::before, html::after, html > body::before, .panel::before, .panel::after { z-index: 0; }
     .app, .panel, .card { position: relative; z-index: 1; }
-    /* ====== End background block ====== */
 
     /* Page (prevent page scroll; internal card scroll only) */
     html,body{height:100%;margin:0;overflow:hidden;
@@ -329,9 +324,6 @@
     */
     const SUGGESTIONS = {/* full SUGGESTIONS object: omitted here for brevity in comments */};
 
-    // (We'll reuse the SUGGESTIONS from your previous implementation.)
-    // To avoid errors, re-declare the full object inline (same as prior).
-    // For the purpose of this paste, I'll create it programmatically below:
     (function populateSuggestions() {
       window.APP_SUGGESTIONS = {
         immediate_recovery: { title:"🛌 Immediate Recovery — Rest First", description:"Priority: safety and rest. Breathe, hydrate, eat a light snack, rest. Avoid intense exercise until you have restorative sleep.", steps:["Sit or lie down in a safe, comfortable place.","3–6 min diaphragmatic breathing (4s inhale — 6s exhale).","Drink ~200–300 ml water slowly.","If possible, eat a light snack (banana, yoghurt, or toast).","Ask a trusted person for a 20–30 min check-in."], intensity:"Very low" },
@@ -415,14 +407,8 @@
       else if (consentBox){ consentBox.classList.remove('show'); }
     }
 
-    /* ----------------- NEW: improved chart rendering -----------------
-       - Smooth curves using Catmull-Rom -> Cubic Bézier conversion
-       - Gridlines, y-axis ticks, legend, small point markers
-       - Hover tooltip showing time + value
-    ------------------------------------------------------------------*/
+    /* ----------------- improved chart rendering -----------------*/
 
-    // helper: convert Catmull-Rom points to cubic Bézier path (returns "d" string)
-    // pts: array of {x,y}. tension optional (0.5 typical)
     function catmullRom2bezier(pts, tension = 0.5) {
       if (!pts || pts.length === 0) return '';
       if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
@@ -446,7 +432,6 @@
       return d;
     }
 
-    // draw chart given history array (last up to 5 records)
     function renderChart(history){
       chartContainer.innerHTML = '';
       chartTooltip.style.display = 'none';
@@ -455,58 +440,43 @@
         return;
       }
 
-      // prepare svg surface
       const w = chartContainer.clientWidth || 420;
       const h = chartContainer.clientHeight || 120;
       const padding = { l: 30, r: 8, t: 10, b: 22 };
       const innerW = Math.max(80, w - padding.l - padding.r);
       const innerH = Math.max(40, h - padding.t - padding.b);
 
-      // x scale: n points
       const n = history.length;
       const xStep = n === 1 ? 0 : innerW / (n - 1);
       const x = i => padding.l + i * xStep;
-
-      // y scale: 0..10 => map to padding.t..padding.t+innerH
       const y = v => padding.t + innerH - (v / 10) * innerH;
 
-      // points arrays
       const moodPts = history.map((d, i) => ({ x: x(i), y: y(d.m), v: d.m, t: d.t }));
       const stressPts = history.map((d, i) => ({ x: x(i), y: y(d.s), v: d.s, t: d.t }));
       const sleepPts = history.map((d, i) => ({ x: x(i), y: y(d.sl), v: d.sl, t: d.t }));
 
-      // grid lines and y ticks
       const yTicks = [10, 5, 0];
 
-      // build svg content
       let svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="history chart">`;
-
-      // background subtle
       svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="none"/>`;
 
-      // grid lines
       yTicks.forEach(t => {
         const yy = y(t);
         svg += `<line x1="${padding.l}" x2="${w - padding.r}" y1="${yy}" y2="${yy}" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>`;
         svg += `<text x="${8}" y="${yy+4}" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}" font-size="11">${t}</text>`;
       });
 
-      // helper to create path
       const moodD = catmullRom2bezier(moodPts);
       const stressD = catmullRom2bezier(stressPts);
       const sleepD = catmullRom2bezier(sleepPts);
 
-      // paths: stress (dashed), sleep (dotted), mood (solid prominent)
       svg += `<path d="${stressD}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--stress-color')}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 4" />`;
       svg += `<path d="${sleepD}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--sleep-color')}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 4" />`;
       svg += `<path d="${moodD}" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--mood-color')}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />`;
 
-      // markers and invisible hover targets
       function addPoints(pts, color, idPrefix) {
         pts.forEach((p, i) => {
-          // visible small marker
           svg += `<circle cx="${p.x}" cy="${p.y}" r="3.4" fill="${color}" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>`;
-          // invisible rect for easier hover (wider hit area)
           const hitW = Math.max(22, xStep);
           const hx = p.x - hitW/2;
           const hy = padding.t;
@@ -517,7 +487,6 @@
       addPoints(stressPts, getComputedStyle(document.documentElement).getPropertyValue('--stress-color'), 'stress');
       addPoints(sleepPts, getComputedStyle(document.documentElement).getPropertyValue('--sleep-color'), 'sleep');
 
-      // x labels (times) under points
       const labels = history.map(d => {
         const dt = new Date(d.t);
         const hh = String(dt.getHours()).padStart(2,'0');
@@ -533,7 +502,6 @@
 
       chartContainer.innerHTML = svg;
 
-      // attach hover handlers to .chart-hit rectangles
       const svgEl = chartContainer.querySelector('svg');
       const hits = chartContainer.querySelectorAll('.chart-hit');
       hits.forEach(hit => {
@@ -546,18 +514,15 @@
           if (series === 'sleep') { pt = sleepPts[idx]; label = 'Sleep'; color = getComputedStyle(document.documentElement).getPropertyValue('--sleep-color'); }
           if (!pt) return;
 
-          // tooltip content
           const dt = new Date(pt.t);
           const time = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
           chartTooltip.innerHTML = `<strong style="color:${color}">${label}</strong>: ${pt.v} — ${time}`;
           chartTooltip.style.display = 'block';
 
-          // position tooltip near the point (convert SVG to container coords)
           const ptClient = svgEl.createSVGPoint();
           ptClient.x = pt.x; ptClient.y = pt.y;
           const ctm = svgEl.getScreenCTM();
           const screenPt = ptClient.matrixTransform(ctm);
-          // place tooltip relative to chartContainer
           const rect = chartContainer.getBoundingClientRect();
           const left = screenPt.x - rect.left;
           const top = screenPt.y - rect.top;
@@ -571,10 +536,8 @@
       });
     }
 
-    // create record helper
     function createRecord(m,s,sl){ return { m:Number(m), s:Number(s), sl:Number(sl), t: Date.now() }; }
 
-    // wire up events
     go.addEventListener('click', () => {
       const m = Number(mood.value), s = Number(stress.value), sl = Number(sleep.value);
       const decision = decideRecommendation(m,s,sl);
@@ -613,7 +576,6 @@
     });
     consentSkip.addEventListener('click', () => { consentBox.classList.remove('show'); });
 
-    // init
     (function init(){
       const hist = loadHistory();
       renderChart(hist);
@@ -623,10 +585,8 @@
       if (consentBox) consentBox.classList.remove('show');
     })();
 
-    // responsive redraw
     window.addEventListener('resize', () => { renderChart(loadHistory()); });
 
-    // accessibility: Enter triggers
     [mood,stress,sleep].forEach(s => s.addEventListener('keydown', (e) => { if (e.key === 'Enter') go.click(); }));
   </script>
 </body>
